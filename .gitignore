@@ -1,0 +1,18 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Raw CSVs are fetched by scripts/download_data.py and are not ours to vendor.
+data/raw/
+
+.env
+.DS_Store
+.idea/
+.vscode/
