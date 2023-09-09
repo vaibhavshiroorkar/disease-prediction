@@ -49,6 +49,27 @@ def test_symptom_matrix_is_binary() -> None:
 
 
 @raw_present
+def test_deduplication_collapses_the_repeated_patterns() -> None:
+    """The published file pads every disease to 120 rows by repeating patterns.
+
+    Splitting before this collapse puts identical vectors in train and test,
+    which is what produces the 100% accuracy this dataset is known for.
+    """
+    data = load_symptoms("train")
+    unique = unique_symptom_patterns(data)
+    assert len(unique.X) < len(data.X) / 10
+    assert unique.y.nunique() == 41
+    assert not unique.X.duplicated().any() or len(unique.X.drop_duplicates()) == len(unique.X)
+
+
+@raw_present
+def test_every_disease_survives_deduplication_with_enough_rows_for_cv() -> None:
+    unique = unique_symptom_patterns(load_symptoms("train"))
+    counts = unique.y.value_counts()
+    assert counts.min() >= 5, "5-fold stratified CV needs at least 5 patterns per class"
+
+
+@raw_present
 def test_test_split_columns_align_with_training() -> None:
     """The 42-row holdout must reindex onto the training feature order."""
     train = unique_symptom_patterns(load_symptoms("train"))

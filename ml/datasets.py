@@ -79,3 +79,21 @@ def load_symptoms(split: str = "train") -> Dataset:
 
     notes.append(f"{len(X)} rows, {X.shape[1]} symptoms, {y.nunique()} diseases")
     return Dataset(X=X, y=y, name=f"symptoms_{split}", notes=notes)
+
+
+def unique_symptom_patterns(dataset: Dataset) -> Dataset:
+    """Collapse the symptom data to its distinct (pattern, disease) rows.
+
+    The published file repeats each disease's handful of symptom patterns until
+    every class has exactly 120 rows. 4920 rows reduce to ~300 distinct ones, so
+    a random split puts identical vectors on both sides and scores ~100%. Every
+    honest estimate in this project is measured after this collapse.
+    """
+    combined = dataset.X.copy()
+    combined["__label__"] = dataset.y.to_numpy()
+    deduped = combined.drop_duplicates().reset_index(drop=True)
+
+    y = deduped["__label__"]
+    X = deduped.drop(columns=["__label__"])
+    notes = [f"collapsed {len(dataset.X)} rows to {len(X)} unique symptom patterns"]
+    return Dataset(X=X, y=y, name=f"{dataset.name}_unique", notes=notes)

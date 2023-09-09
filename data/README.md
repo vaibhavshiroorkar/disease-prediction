@@ -25,3 +25,7 @@ Handled in `ml/datasets.py`, tested in `tests/test_datasets.py`.
   `fluid_overload.1`. The first copy is entirely zero and is dropped as constant.
 - Several names carry stray spaces: `dischromic _patches`,
   `spotting_ urination`, `foul_smell_of urine`.
+- 4920 rows collapse to 304 distinct symptom patterns. Each disease's handful
+  of real patterns is repeated to pad every class to 120 rows. Splitting before
+  deduplication leaks identical rows across train and test, which is where the
+  widely quoted 100% accuracy comes from.
