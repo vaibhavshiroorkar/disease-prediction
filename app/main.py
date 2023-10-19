@@ -18,6 +18,7 @@ from fastapi.responses import JSONResponse
 
 from app.config import ALLOWED_ORIGINS, API_TITLE, API_VERSION, PRELOAD_MODELS
 from app.registry import ModelNotAvailable, registry
+from app.routers import meta
 from app.schemas import HealthResponse
 
 logging.basicConfig(
@@ -74,6 +75,9 @@ async def model_unavailable_handler(_: Request, exc: ModelNotAvailable) -> JSONR
     return JSONResponse(status_code=503, content={"detail": str(exc)})
 
 
+app.include_router(meta.router)
+
+
 @app.get("/", tags=["meta"], summary="Service description")
 def root() -> dict[str, object]:
     return {
@@ -82,6 +86,9 @@ def root() -> dict[str, object]:
         "docs": "/docs",
         "endpoints": [
             "GET  /health",
+            "GET  /symptoms",
+            "GET  /diseases",
+            "GET  /diseases/{name}/symptoms",
         ],
     }
 
