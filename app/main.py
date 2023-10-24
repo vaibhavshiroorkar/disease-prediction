@@ -18,7 +18,7 @@ from fastapi.responses import JSONResponse
 
 from app.config import ALLOWED_ORIGINS, API_TITLE, API_VERSION, PRELOAD_MODELS
 from app.registry import ModelNotAvailable, registry
-from app.routers import meta
+from app.routers import meta, predict
 from app.schemas import HealthResponse
 
 logging.basicConfig(
@@ -76,6 +76,7 @@ async def model_unavailable_handler(_: Request, exc: ModelNotAvailable) -> JSONR
 
 
 app.include_router(meta.router)
+app.include_router(predict.router)
 
 
 @app.get("/", tags=["meta"], summary="Service description")
@@ -89,6 +90,7 @@ def root() -> dict[str, object]:
             "GET  /symptoms",
             "GET  /diseases",
             "GET  /diseases/{name}/symptoms",
+            "POST /predict/symptoms",
         ],
     }
 
