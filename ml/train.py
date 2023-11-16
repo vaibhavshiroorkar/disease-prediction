@@ -1,6 +1,7 @@
-"""Train the symptom classifier and write models/symptom.joblib.
+"""Tune and train the symptom classifier, then write models/symptom.joblib.
 
-    python -m ml.train
+    python -m ml.train              # grid search, then fit the winner
+    python -m ml.train --no-search  # skip the search, use the base settings
 
 The artifact is a self-describing dict: the fitted estimator, the exact feature
 order the API must rebuild, the class labels, and the scores this run measured.
@@ -8,6 +9,7 @@ order the API must rebuild, the class labels, and the scores this run measured.
 
 from __future__ import annotations
 
+import argparse
 import json
 import time
 from datetime import datetime, timezone
@@ -19,8 +21,8 @@ import sklearn
 
 from ml.config import ARTIFACT_VERSION, MODELS_DIR, SOURCES
 from ml.datasets import Dataset, load_symptoms, unique_symptom_patterns
-from ml.evaluate import cross_validated_scores, holdout_scores
-from ml.model import base_model
+from ml.evaluate import cross_validated_scores, holdout_scores, noise_robustness
+from ml.model import base_model, recall_search, search_summary
 
 
 def _log(dataset: Dataset) -> None:
@@ -42,7 +44,7 @@ def disease_symptom_map(X: pd.DataFrame, y: pd.Series) -> dict[str, list[str]]:
     return mapping
 
 
-def train() -> dict[str, Any]:
+def train(search: bool = True) -> dict[str, Any]:
     print("[symptom] loading")
     raw = load_symptoms("train")
     _log(raw)
@@ -50,22 +52,44 @@ def train() -> dict[str, Any]:
     unique = unique_symptom_patterns(raw)
     _log(unique)
 
-    started = time.perf_counter()
-    model = base_model()
+    X, y = unique.X, unique.y
 
-    print("[symptom] cross-validating")
-    metrics: dict[str, Any] = {"cross_validation": cross_validated_scores(model, unique.X, unique.y)}
+    started = time.perf_counter()
+    metrics: dict[str, Any] = {}
+
+    if search:
+        print("[symptom] grid searching on macro recall")
+        grid = recall_search()
+        grid.fit(X, y)
+        metrics["search"] = search_summary(grid)
+        model = grid.best_estimator_
+        print(f"    best params: {grid.best_params_}")
+        print(
+            f"    cv macro recall {metrics['search']['cv_recall_macro']:.4f}"
+            f"  accuracy {metrics['search']['cv_accuracy']:.4f}"
+        )
+    else:
+        model = base_model()
+
+    print("[symptom] cross-validating the chosen model")
+    metrics["cross_validation"] = cross_validated_scores(model, X, y)
 
     print("[symptom] fitting on all training rows")
-    model.fit(unique.X, unique.y)
+    model.fit(X, y)
 
     test = load_symptoms("test")
     aligned = test.X.reindex(columns=unique.feature_names, fill_value=0)
     metrics["holdout"] = holdout_scores(model, aligned, test.y)
 
+    print("[symptom] measuring noise robustness")
+    metrics["noise_1_dropped_1_added"] = noise_robustness(model, unique.X, unique.y, drop=1, add=1)
+    metrics["noise_2_dropped_2_added"] = noise_robustness(model, unique.X, unique.y, drop=2, add=2)
+
     elapsed = round(time.perf_counter() - started, 1)
     for label, scores in metrics.items():
-        print(f"    {label}: {scores}")
+        # per_class_recall is 41 entries; it belongs in the artifact, not the log.
+        shown = {k: v for k, v in scores.items() if k != "per_class_recall"}
+        print(f"    {label}: {shown}")
 
     return {
         "artifact_version": ARTIFACT_VERSION,
@@ -107,7 +131,11 @@ def write(bundle: dict[str, Any]) -> None:
 
 
 def main() -> int:
-    write(train())
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--no-search", action="store_true", help="skip the grid search")
+    args = parser.parse_args()
+
+    write(train(search=not args.no_search))
     return 0
 
 
