@@ -8,6 +8,7 @@ Recall is the headline. Missing a real condition is the expensive error, so
 per-class recall is reported in full rather than averaged away.
 """
 
+from __future__ import annotations
 
 import numpy as np
 import pandas as pd
@@ -82,4 +83,53 @@ def holdout_scores(model, X: pd.DataFrame, y: pd.Series) -> dict[str, object]:
         "classes_with_perfect_recall": sum(1 for c in present if recalls.get(c) == 1.0),
         "classes_evaluated": len(present),
         "per_class_recall": {c: recalls[c] for c in present},
+    }
+
+
+def noise_robustness(
+    model,
+    X: pd.DataFrame,
+    y: pd.Series,
+    drop: int = 1,
+    add: int = 1,
+    trials: int = 20,
+    seed: int = RANDOM_SEED,
+) -> dict[str, float]:
+    """Score the model when the reported symptoms are wrong in realistic ways.
+
+    A real user forgets a symptom and volunteers one that is unrelated. Each
+    trial removes `drop` present symptoms and switches on `add` absent ones,
+    then measures whether the true disease is still ranked first and top-3.
+    """
+    rng = np.random.default_rng(seed)
+    classes = np.asarray(model.classes_)
+    columns = list(X.columns)
+    top1: list[float] = []
+    top3: list[float] = []
+    recalls: list[float] = []
+
+    for _ in range(trials):
+        perturbed = X.to_numpy(copy=True)
+        for row in range(perturbed.shape[0]):
+            present = np.flatnonzero(perturbed[row] == 1)
+            absent = np.flatnonzero(perturbed[row] == 0)
+            if drop and len(present) > drop:
+                perturbed[row, rng.choice(present, size=drop, replace=False)] = 0
+            if add and len(absent) >= add:
+                perturbed[row, rng.choice(absent, size=add, replace=False)] = 1
+
+        proba = model.predict_proba(pd.DataFrame(perturbed, columns=columns))
+        predicted = classes[np.argmax(proba, axis=1)]
+        top1.append(float(accuracy_score(y, predicted)))
+        top3.append(top_k_accuracy(proba, classes, y, 3))
+        recalls.append(float(recall_score(y, predicted, average="macro", zero_division=0)))
+
+    return {
+        "dropped_symptoms": drop,
+        "added_symptoms": add,
+        "trials": trials,
+        "accuracy": round(float(np.mean(top1)), 4),
+        "accuracy_std": round(float(np.std(top1)), 4),
+        "macro_recall": round(float(np.mean(recalls)), 4),
+        "top_3_accuracy": round(float(np.mean(top3)), 4),
     }
