@@ -22,6 +22,14 @@ PRELOAD_MODELS = os.environ.get("PRELOAD_MODELS", "1") not in {"0", "false", "Fa
 
 PORT = int(os.environ.get("PORT", "8000"))
 
+# Postgres connection string, e.g.
+#   postgresql://dps:devpass@localhost:5432/disease_predictions
+# Unset means prediction logging is disabled and the service runs without a
+# database, which is what a fresh clone and the test suite do.
+DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
+DATABASE_POOL_MIN = int(os.environ.get("DATABASE_POOL_MIN", "1"))
+DATABASE_POOL_MAX = int(os.environ.get("DATABASE_POOL_MAX", "5"))
+
 API_TITLE = "Disease Prediction API"
 API_VERSION = "1.0.0"
 
