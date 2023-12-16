@@ -61,8 +61,44 @@ class SymptomResponse(BaseModel):
     suggestions: dict[str, list[str]] = Field(
         default_factory=dict, description="Close matches for each unknown name."
     )
+    prediction_id: int | None = Field(
+        None,
+        description="Row id in Postgres, for submitting a review later. Null when logging is off.",
+    )
     model_metrics: dict[str, Any] = Field(default_factory=dict)
     disclaimer: str
+
+
+class ReviewRequest(BaseModel):
+    """A reviewer's verdict on a logged prediction."""
+
+    was_correct: bool = Field(..., description="Whether the top-ranked condition was right.")
+    actual_disease: str | None = Field(
+        None,
+        description="What the condition actually was. Required to retrain on this row.",
+    )
+
+    @field_validator("actual_disease")
+    @classmethod
+    def strip_blank(cls, value: str | None) -> str | None:
+        cleaned = (value or "").strip()
+        return cleaned or None
+
+
+class ReviewResponse(BaseModel):
+    prediction_id: int
+    recorded: bool
+    message: str
+
+
+class LoggedPrediction(BaseModel):
+    id: int
+    created_at: str | None
+    symptoms: list[str]
+    predicted_disease: str | None
+    confidence: float | None
+    actual_disease: str | None
+    was_correct: bool | None
 
 
 class SymptomCatalogue(BaseModel):
@@ -79,3 +115,4 @@ class HealthResponse(BaseModel):
     status: str
     version: str
     models: dict[str, Any]
+    database: dict[str, Any] = Field(default_factory=dict)

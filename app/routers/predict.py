@@ -8,6 +8,7 @@ import time
 
 from fastapi import APIRouter, HTTPException
 
+from app import db
 from app.config import DISCLAIMER
 from app.registry import LoadedModel, ModelNotAvailable, rank_probabilities, registry
 from app.schemas import RankedCondition, SymptomRequest, SymptomResponse
@@ -94,12 +95,22 @@ def predict_symptoms(request: SymptomRequest) -> SymptomResponse:
         )
 
     elapsed_ms = (time.perf_counter() - started) * 1000
+    prediction_id = db.log_prediction(
+        symptoms=recognized,
+        unknown=unknown,
+        top_k=request.top_k,
+        ranked=[p.model_dump() for p in predictions],
+        model_trained_at=model.trained_at,
+        response_ms=round(elapsed_ms, 2),
+    )
+
     log.info(
-        "symptom prediction: %d recognized -> %s (%.3f) in %.1fms",
+        "symptom prediction: %d recognized -> %s (%.3f) in %.1fms id=%s",
         len(recognized),
         predictions[0].disease,
         predictions[0].probability,
         elapsed_ms,
+        prediction_id,
     )
 
     return SymptomResponse(
@@ -107,6 +118,7 @@ def predict_symptoms(request: SymptomRequest) -> SymptomResponse:
         recognized_symptoms=recognized,
         unknown_symptoms=unknown,
         suggestions=_suggest(unknown, model.feature_names),
+        prediction_id=prediction_id,
         model_metrics=model.metrics,
         disclaimer=DISCLAIMER,
     )
