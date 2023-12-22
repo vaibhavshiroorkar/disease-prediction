@@ -16,9 +16,10 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app import db
 from app.config import ALLOWED_ORIGINS, API_TITLE, API_VERSION, PRELOAD_MODELS
 from app.registry import ModelNotAvailable, registry
-from app.routers import meta, predict
+from app.routers import meta, predict, review
 from app.schemas import HealthResponse
 
 logging.basicConfig(
@@ -37,15 +38,20 @@ async def lifespan(_: FastAPI):
     else:
         log.info("PRELOAD_MODELS disabled, the artifact loads on first use")
 
+    # Opens the pool and applies the schema. Logs and continues if Postgres is
+    # unreachable, because logging predictions is not part of serving them.
+    db.init_pool()
     yield
+    db.close_pool()
 
 
 app = FastAPI(
     title=API_TITLE,
     version=API_VERSION,
     description=(
-        "Ranks likely conditions from reported symptoms using a Random Forest "
-        "trained on a public symptom-disease dataset."
+        "Ranks likely conditions from reported symptoms using a Random Forest tuned "
+        "for recall. Every prediction is logged to PostgreSQL so wrong outputs can be "
+        "reviewed and fed back into training."
     ),
     lifespan=lifespan,
 )
@@ -77,6 +83,7 @@ async def model_unavailable_handler(_: Request, exc: ModelNotAvailable) -> JSONR
 
 app.include_router(meta.router)
 app.include_router(predict.router)
+app.include_router(review.router)
 
 
 @app.get("/", tags=["meta"], summary="Service description")
@@ -91,16 +98,20 @@ def root() -> dict[str, object]:
             "GET  /diseases",
             "GET  /diseases/{name}/symptoms",
             "POST /predict/symptoms",
+            "GET  /predictions",
+            "GET  /predictions/wrong",
+            "GET  /predictions/stats",
+            "POST /predictions/{id}/review",
         ],
     }
 
 
 @app.get("/health", response_model=HealthResponse, tags=["meta"], summary="Liveness and model status")
 def health() -> HealthResponse:
-    """Reports whether the model artifact loaded.
+    """Reports model load state and whether prediction logging is live.
 
-    Returns 200 with `degraded` rather than failing, so the cause is visible in
-    the payload instead of an opaque connection error.
+    Returns 200 when the database is down: the service still predicts, it just
+    stops recording. `status` is `degraded` only when the model is unavailable.
     """
     status = registry.status()
     healthy = all(entry["loaded"] for entry in status.values())
@@ -108,4 +119,5 @@ def health() -> HealthResponse:
         status="ok" if healthy else "degraded",
         version=API_VERSION,
         models=status,
+        database=db.stats(),
     )
