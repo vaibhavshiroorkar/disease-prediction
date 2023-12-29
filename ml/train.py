@@ -1,7 +1,8 @@
 """Tune and train the symptom classifier, then write models/symptom.joblib.
 
-    python -m ml.train              # grid search, then fit the winner
-    python -m ml.train --no-search  # skip the search, use the base settings
+    python -m ml.train                 # grid search, then fit the winner
+    python -m ml.train --no-search     # skip the search, use the base settings
+    python -m ml.train --with-feedback # fold in corrected predictions from Postgres
 
 The artifact is a self-describing dict: the fitted estimator, the exact feature
 order the API must rebuild, the class labels, and the scores this run measured.
@@ -44,7 +45,48 @@ def disease_symptom_map(X: pd.DataFrame, y: pd.Series) -> dict[str, list[str]]:
     return mapping
 
 
-def train(search: bool = True) -> dict[str, Any]:
+def load_feedback(feature_names: list[str]) -> Dataset | None:
+    """Pull reviewer-corrected predictions out of Postgres as extra training rows.
+
+    Every prediction the API serves is logged, and a reviewer can record what the
+    condition actually was. Those are cases the model already got wrong, so they
+    are worth more per row than anything in the original file.
+
+    Returns None when the database is unreachable or holds no corrections yet.
+    Training must not depend on it.
+    """
+    from app.db import fetch_training_feedback  # late import: training works with no database
+
+    rows = fetch_training_feedback()
+    if not rows:
+        return None
+
+    index = {name: i for i, name in enumerate(feature_names)}
+    matrix: list[list[int]] = []
+    labels: list[str] = []
+    for symptoms, actual in rows:
+        known = [s for s in symptoms if s in index]
+        if not known:
+            continue
+        vector = [0] * len(feature_names)
+        for symptom in known:
+            vector[index[symptom]] = 1
+        matrix.append(vector)
+        labels.append(actual)
+
+    if not matrix:
+        return None
+
+    X = pd.DataFrame(matrix, columns=feature_names).astype("int8")
+    return Dataset(
+        X=X,
+        y=pd.Series(labels),
+        name="feedback",
+        notes=[f"{len(X)} corrected predictions pulled from Postgres"],
+    )
+
+
+def train(search: bool = True, with_feedback: bool = False) -> dict[str, Any]:
     print("[symptom] loading")
     raw = load_symptoms("train")
     _log(raw)
@@ -53,6 +95,16 @@ def train(search: bool = True) -> dict[str, Any]:
     _log(unique)
 
     X, y = unique.X, unique.y
+    feedback_rows = 0
+    if with_feedback:
+        feedback = load_feedback(unique.feature_names)
+        if feedback is None:
+            print("    - no feedback available, training on the base data only")
+        else:
+            _log(feedback)
+            feedback_rows = len(feedback.X)
+            X = pd.concat([X, feedback.X], ignore_index=True)
+            y = pd.concat([y, feedback.y], ignore_index=True)
 
     started = time.perf_counter()
     metrics: dict[str, Any] = {}
@@ -106,6 +158,7 @@ def train(search: bool = True) -> dict[str, Any]:
             "description": SOURCES["symptom_train"].description,
             "rows_raw": int(len(raw.X)),
             "rows_unique": int(len(unique.X)),
+            "rows_feedback": feedback_rows,
         },
         "trained_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "sklearn_version": sklearn.__version__,
@@ -133,9 +186,14 @@ def write(bundle: dict[str, Any]) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--no-search", action="store_true", help="skip the grid search")
+    parser.add_argument(
+        "--with-feedback",
+        action="store_true",
+        help="add reviewer-corrected predictions from Postgres to the training data",
+    )
     args = parser.parse_args()
 
-    write(train(search=not args.no_search))
+    write(train(search=not args.no_search, with_feedback=args.with_feedback))
     return 0
 
 
