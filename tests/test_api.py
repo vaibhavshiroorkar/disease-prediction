@@ -1,7 +1,8 @@
 """End-to-end tests against the running app and the real artifact."""
 
+from __future__ import annotations
 
-from tests.conftest import requires_model
+from tests.conftest import requires_db, requires_model
 
 
 def test_root_lists_endpoints(client) -> None:
@@ -137,3 +138,70 @@ def test_missing_symptoms_field_is_rejected(client) -> None:
 def test_timing_header_is_present(client) -> None:
     response = client.get("/health")
     assert float(response.headers["X-Response-Time-ms"]) >= 0
+
+
+@requires_model
+def test_prediction_id_is_null_when_logging_is_off(client) -> None:
+    """With no database attached the endpoint still answers, just without an id."""
+    from app import db
+
+    if db.enabled():
+        return
+    body = client.post("/predict/symptoms", json={"symptoms": ["itching"]}).json()
+    assert body["prediction_id"] is None
+
+
+@requires_model
+@requires_db
+def test_prediction_is_logged_and_can_be_reviewed(client, clean_table) -> None:
+    """The full loop: predict, find it in the log, mark it wrong, see it queued."""
+    body = client.post(
+        "/predict/symptoms",
+        json={"symptoms": ["itching", "skin_rash", "nodal_skin_eruptions"]},
+    ).json()
+    prediction_id = body["prediction_id"]
+    assert isinstance(prediction_id, int)
+
+    logged = client.get("/predictions").json()
+    assert any(row["id"] == prediction_id for row in logged)
+
+    review = client.post(
+        f"/predictions/{prediction_id}/review",
+        json={"was_correct": False, "actual_disease": "Acne"},
+    )
+    assert review.status_code == 200
+    assert review.json()["recorded"] is True
+
+    wrong = client.get("/predictions/wrong").json()
+    assert [row["id"] for row in wrong] == [prediction_id]
+    assert wrong[0]["actual_disease"] == "Acne"
+
+
+@requires_model
+@requires_db
+def test_review_of_an_unknown_id_returns_404(client, clean_table) -> None:
+    response = client.post(
+        "/predictions/424242/review", json={"was_correct": True, "actual_disease": None}
+    )
+    assert response.status_code == 404
+
+
+@requires_db
+def test_stats_endpoint_reports_logging_state(client, clean_table) -> None:
+    body = client.get("/predictions/stats").json()
+    assert body["logging_enabled"] is True
+    assert body["total"] == 0
+
+
+@requires_db
+def test_blank_actual_disease_is_stored_as_null(client, clean_table) -> None:
+    """'  ' is not a diagnosis; it must not become a training label."""
+    prediction_id = clean_table.log_prediction(
+        ["itching"], [], 5, [{"disease": "Acne", "probability": 0.7}]
+    )
+    response = client.post(
+        f"/predictions/{prediction_id}/review",
+        json={"was_correct": False, "actual_disease": "   "},
+    )
+    assert response.status_code == 200
+    assert clean_table.fetch_training_feedback() == []
