@@ -1,0 +1,29 @@
+# Local Postgres for development. The service itself runs from the shell with
+# uvicorn; this only provides the database it logs to.
+#
+#   docker compose up -d
+#   export DATABASE_URL=postgresql://dps:devpass@localhost:5432/disease_predictions
+#   uvicorn app.main:app --reload
+#
+# The credentials are throwaway and the volume is disposable. Any other Postgres
+# works just as well: the app only needs a DATABASE_URL it can connect to, and it
+# creates its own table on startup.
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: dps
+      POSTGRES_PASSWORD: devpass
+      POSTGRES_DB: disease_predictions
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dps -d disease_predictions"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:
