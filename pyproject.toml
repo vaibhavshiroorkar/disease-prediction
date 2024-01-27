@@ -1,5 +1,22 @@
 [project]
 name = "disease-prediction-system"
-version = "0.1.0"
+version = "1.0.0"
 description = "FastAPI service that ranks likely conditions from reported symptoms"
 requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+filterwarnings = [
+    # scikit-learn and pandas both emit deprecation chatter from inside the
+    # ensemble internals that this project cannot act on.
+    "ignore::DeprecationWarning",
+    "ignore::FutureWarning",
+]
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
