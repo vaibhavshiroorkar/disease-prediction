@@ -4,6 +4,10 @@ pydantic>=2.4
 pandas>=2.0
 numpy>=1.24
 
+# Training draws the ROC, precision-recall and calibration figures with this.
+# The API never imports it.
+matplotlib>=3.8
+
 # Prediction logging. Optional at runtime: with DATABASE_URL unset the service
 # runs without a database and never imports these.
 psycopg[binary,pool]>=3.1

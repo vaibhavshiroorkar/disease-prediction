@@ -13,7 +13,9 @@ from __future__ import annotations
 from typing import Any
 
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import GridSearchCV, StratifiedKFold
+from sklearn.naive_bayes import BernoulliNB
 
 from ml.config import RANDOM_SEED
 
@@ -85,4 +87,17 @@ def search_summary(search: GridSearchCV) -> dict[str, Any]:
         "cv_recall_macro": round(best_recall, 4),
         "cv_accuracy": round(float(results["mean_test_accuracy"][index]), 4),
         "worst_candidate_recall": round(float(min(results["mean_test_recall_macro"])), 4),
+    }
+
+
+def baselines(seed: int = RANDOM_SEED) -> dict[str, Any]:
+    """Simpler models to hold the forest against.
+
+    Bernoulli naive Bayes is the textbook model for "which symptoms are present"
+    data. Logistic regression is the usual linear baseline. If the forest cannot
+    beat these on held-out noisy patterns, it is not earning its 1.6 MB.
+    """
+    return {
+        "bernoulli_nb": BernoulliNB(alpha=1.0),
+        "logistic": LogisticRegression(C=1.0, max_iter=5000, random_state=seed),
     }

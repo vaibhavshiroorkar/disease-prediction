@@ -116,7 +116,11 @@ def candidates(
             {"model__min_samples_leaf": [1, 5, 15], "model__max_features": ["sqrt", 0.5]},
         ),
         "boosting": (
-            pipe(HistGradientBoostingClassifier(random_state=seed, early_stopping=False, l2_regularization=1.0)),
+            pipe(
+                HistGradientBoostingClassifier(
+                    random_state=seed, early_stopping=False, l2_regularization=1.0
+                )
+            ),
             {"model__learning_rate": [0.03, 0.1], "model__max_depth": [2, 3], "model__max_iter": [100, 300]},
         ),
     }
@@ -195,6 +199,22 @@ def pick(table: list[dict[str, Any]]) -> str:
     if best["roc_auc"] - logistic["roc_auc"] <= best["roc_auc_std"] / 2:
         return "logistic"
     return best["family"]
+
+
+def untuned(
+    family: str, features: list[FeatureSpec], missing_indicators: bool, seed: int = RANDOM_SEED
+) -> CalibratedClassifierCV:
+    """The family with its search still inside, so tuning happens on whatever rows it is fit on.
+
+    The leave-one-site-out check uses this. The left-out hospital must not
+    influence the settings, and fitting the search afresh guarantees that.
+    """
+    pipeline, grid = candidates(features, missing_indicators, seed)[family]
+    return CalibratedClassifierCV(
+        tuned(pipeline, grid, seed),
+        method="sigmoid",
+        cv=StratifiedKFold(n_splits=5, shuffle=True, random_state=seed),
+    )
 
 
 def fit_final(

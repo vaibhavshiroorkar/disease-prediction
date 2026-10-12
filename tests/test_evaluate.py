@@ -106,3 +106,25 @@ def test_noise_robustness_is_deterministic_for_a_fixed_seed() -> None:
     second = noise_robustness(_ExactMatchModel(), X, y, drop=1, add=1, trials=4, seed=7)
 
     assert first == second
+
+
+def test_perturb_changes_exactly_the_requested_number_of_symptoms() -> None:
+    from ml.evaluate import _perturb
+
+    matrix = np.array([[1, 1, 1, 0, 0, 0], [1, 1, 1, 1, 0, 0]])
+    perturbed = _perturb(matrix.copy(), drop=1, add=2, rng=np.random.default_rng(0))
+    assert (perturbed.sum(axis=1) == matrix.sum(axis=1) + 1).all()
+    assert (np.abs(perturbed - matrix).sum(axis=1) == 3).all()
+
+
+def test_held_out_noise_scores_two_separable_classes_perfectly_without_noise() -> None:
+    """Checks the fold loop and class alignment rather than the noise itself."""
+    from sklearn.naive_bayes import BernoulliNB
+
+    from ml.evaluate import held_out_noise
+
+    X = pd.DataFrame([[1, 0, 0, 1]] * 5 + [[0, 1, 1, 0]] * 5, columns=list("abcd"))
+    y = pd.Series(["x"] * 5 + ["y"] * 5)
+    scores = held_out_noise(BernoulliNB(), X, y, drop=0, add=0)
+    assert scores["accuracy"] == 1.0
+    assert set(scores) == {"dropped_symptoms", "added_symptoms", "accuracy", "macro_recall", "top_3_accuracy"}

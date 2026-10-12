@@ -13,8 +13,9 @@ that still catches a target share of real cases (90% by default).
 from __future__ import annotations
 
 import math
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -33,7 +34,9 @@ from ml.config import RANDOM_SEED
 TARGET_SENSITIVITY = 0.90
 
 
-def choose_threshold(y: np.ndarray, proba: np.ndarray, target_sensitivity: float = TARGET_SENSITIVITY) -> float:
+def choose_threshold(
+    y: np.ndarray, proba: np.ndarray, target_sensitivity: float = TARGET_SENSITIVITY
+) -> float:
     """The highest threshold that still flags `target_sensitivity` of true cases.
 
     A row is flagged when its probability is >= the threshold. Sorting the
@@ -151,7 +154,9 @@ def calibration_table(y: np.ndarray, proba: np.ndarray, bins: int = 10) -> dict[
     return {"ece": round(float(ece), 4), "bins": rows}
 
 
-def out_of_fold_proba(model, X: pd.DataFrame, y: pd.Series, folds: int = 5, seed: int = RANDOM_SEED) -> np.ndarray:
+def out_of_fold_proba(
+    model, X: pd.DataFrame, y: pd.Series, folds: int = 5, seed: int = RANDOM_SEED
+) -> np.ndarray:
     """Positive-class probabilities where each row is scored by a model that never saw it."""
     cv = StratifiedKFold(n_splits=folds, shuffle=True, random_state=seed)
     return cross_val_predict(clone(model), X, y, cv=cv, method="predict_proba")[:, 1]
@@ -212,7 +217,6 @@ def figures(
     proba: np.ndarray,
     threshold: float,
     out_dir: Path,
-    comparison: dict[str, np.ndarray] | None = None,
 ) -> list[Path]:
     """ROC, precision-recall, calibration and confusion plots for the test set.
 
@@ -228,16 +232,13 @@ def figures(
     out_dir.mkdir(parents=True, exist_ok=True)
     y = np.asarray(y).astype(int)
     proba = np.asarray(proba, dtype=float)
-    curves = {"chosen model": proba, **(comparison or {})}
     paths: list[Path] = []
 
     fig, axes = plt.subplots(1, 3, figsize=(15, 4.6))
 
     ax = axes[0]
-    for label, scores in curves.items():
-        fpr, tpr, _ = roc_curve(y, scores)
-        ax.plot(fpr, tpr, lw=2 if label == "chosen model" else 1,
-                label=f"{label} (AUC {roc_auc_score(y, scores):.3f})")
+    fpr, tpr, _ = roc_curve(y, proba)
+    ax.plot(fpr, tpr, lw=2, label=f"model (AUC {roc_auc_score(y, proba):.3f})")
     ax.plot([0, 1], [0, 1], ls=":", color="grey", lw=1)
     predicted = proba >= threshold
     ax.scatter([1 - (~predicted & (y == 0)).sum() / max((y == 0).sum(), 1)],
@@ -247,10 +248,9 @@ def figures(
     ax.legend(loc="lower right", fontsize=8)
 
     ax = axes[1]
-    for label, scores in curves.items():
-        precision, recall, _ = precision_recall_curve(y, scores)
-        ax.plot(recall, precision, lw=2 if label == "chosen model" else 1,
-                label=f"{label} (AP {average_precision_score(y, scores):.3f})")
+    precision, recall, _ = precision_recall_curve(y, proba)
+    ax.step(recall, precision, where="post", lw=2,
+            label=f"model (AP {average_precision_score(y, proba):.3f})")
     ax.axhline(y.mean(), ls=":", color="grey", lw=1, label=f"prevalence {y.mean():.2f}")
     ax.set(title="Precision-recall", xlabel="Recall (sensitivity)", ylabel="Precision (PPV)")
     ax.legend(loc="lower left", fontsize=8)

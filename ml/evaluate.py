@@ -13,7 +13,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 from sklearn.base import clone
-from sklearn.metrics import accuracy_score, f1_score, recall_score
+from sklearn.metrics import accuracy_score, f1_score, log_loss, recall_score
 from sklearn.model_selection import StratifiedKFold, cross_val_predict
 
 from ml.config import RANDOM_SEED
@@ -60,6 +60,9 @@ def cross_validated_scores(model, X: pd.DataFrame, y: pd.Series, folds: int = 5)
         "macro_recall": round(float(recall_score(y, predicted, average="macro", zero_division=0)), 4),
         "macro_f1": round(float(f1_score(y, predicted, average="macro")), 4),
         "top_3_accuracy": round(top_k_accuracy(proba, classes, y, 3), 4),
+        # Accuracy is saturated on this data, so this is the score that still
+        # separates models: it punishes a right answer given with low confidence.
+        "log_loss": round(float(log_loss(y, proba, labels=classes)), 4),
         "weakest_classes": weakest_classes(recalls),
     }
 
@@ -86,6 +89,63 @@ def holdout_scores(model, X: pd.DataFrame, y: pd.Series) -> dict[str, object]:
     }
 
 
+def _perturb(matrix: np.ndarray, drop: int, add: int, rng: np.random.Generator) -> np.ndarray:
+    """Switch off `drop` present symptoms and switch on `add` absent ones, per row."""
+    for row in range(matrix.shape[0]):
+        present = np.flatnonzero(matrix[row] == 1)
+        absent = np.flatnonzero(matrix[row] == 0)
+        if drop and len(present) > drop:
+            matrix[row, rng.choice(present, size=drop, replace=False)] = 0
+        if add and len(absent) >= add:
+            matrix[row, rng.choice(absent, size=add, replace=False)] = 1
+    return matrix
+
+
+def held_out_noise(
+    model,
+    X: pd.DataFrame,
+    y: pd.Series,
+    drop: int,
+    add: int,
+    folds: int = 5,
+    trials: int = 5,
+    seed: int = RANDOM_SEED,
+) -> dict[str, float]:
+    """The noise test on patterns the model never saw.
+
+    `noise_robustness` perturbs the training patterns themselves, so a model
+    that memorised them gets a head start. Here each fold is held out, then
+    perturbed and scored by a model fit on the other four. That is the fair
+    way to compare two models' robustness.
+    """
+    rng = np.random.default_rng(seed)
+    cv = StratifiedKFold(n_splits=folds, shuffle=True, random_state=seed)
+    truth: list[str] = []
+    probas: list[np.ndarray] = []
+    classes = np.unique(y)
+
+    for train_index, test_index in cv.split(X, y):
+        fitted = clone(model).fit(X.iloc[train_index], y.iloc[train_index])
+        order = [list(fitted.classes_).index(c) for c in classes]
+        for _ in range(trials):
+            perturbed = _perturb(X.iloc[test_index].to_numpy(copy=True), drop, add, rng)
+            probas.append(fitted.predict_proba(pd.DataFrame(perturbed, columns=X.columns))[:, order])
+            truth.extend(y.iloc[test_index])
+
+    proba = np.vstack(probas)
+    truth_series = pd.Series(truth)
+    predicted = classes[np.argmax(proba, axis=1)]
+    return {
+        "dropped_symptoms": drop,
+        "added_symptoms": add,
+        "accuracy": round(float(accuracy_score(truth_series, predicted)), 4),
+        "macro_recall": round(
+            float(recall_score(truth_series, predicted, average="macro", zero_division=0)), 4
+        ),
+        "top_3_accuracy": round(top_k_accuracy(proba, classes, truth_series, 3), 4),
+    }
+
+
 def noise_robustness(
     model,
     X: pd.DataFrame,
@@ -109,15 +169,7 @@ def noise_robustness(
     recalls: list[float] = []
 
     for _ in range(trials):
-        perturbed = X.to_numpy(copy=True)
-        for row in range(perturbed.shape[0]):
-            present = np.flatnonzero(perturbed[row] == 1)
-            absent = np.flatnonzero(perturbed[row] == 0)
-            if drop and len(present) > drop:
-                perturbed[row, rng.choice(present, size=drop, replace=False)] = 0
-            if add and len(absent) >= add:
-                perturbed[row, rng.choice(absent, size=add, replace=False)] = 1
-
+        perturbed = _perturb(X.to_numpy(copy=True), drop, add, rng)
         proba = model.predict_proba(pd.DataFrame(perturbed, columns=columns))
         predicted = classes[np.argmax(proba, axis=1)]
         top1.append(float(accuracy_score(y, predicted)))
