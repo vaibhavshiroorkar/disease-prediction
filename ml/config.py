@@ -16,6 +16,10 @@ RANDOM_SEED = 42
 # stale artifact fails loudly at load instead of misbehaving at predict time.
 ARTIFACT_VERSION = 2
 
+# The four hospitals in the UCI heart disease collection. Order matters only for
+# reports: Cleveland is the site everyone else's papers use.
+HEART_SITES = ("cleveland", "hungarian", "switzerland", "va")
+
 
 @dataclass(frozen=True)
 class Source:
@@ -45,6 +49,37 @@ SOURCES: dict[str, Source] = {
             url="https://raw.githubusercontent.com/anujdutt9/Disease-Prediction-from-Symptoms/master/dataset/test_data.csv",
             filename="symptom_testing.csv",
             description="42-row held-out split published alongside the training file.",
+        ),
+        *[
+            Source(
+                key=f"heart_{site}",
+                url=(
+                    "https://archive.ics.uci.edu/ml/machine-learning-databases/heart-disease/"
+                    f"processed.{site}.data"
+                ),
+                filename=f"heart_{site}.data",
+                description=f"UCI Heart Disease, {site} site. 14 processed attributes per patient.",
+            )
+            for site in HEART_SITES
+        ],
+        Source(
+            key="diabetes",
+            url="https://raw.githubusercontent.com/jbrownlee/Datasets/master/pima-indians-diabetes.data.csv",
+            filename="pima_diabetes.csv",
+            description=(
+                "Pima Indians Diabetes, 768 women. Mirror of the file UCI has since withdrawn; "
+                "the original came from the National Institute of Diabetes and Digestive and "
+                "Kidney Diseases."
+            ),
+        ),
+        Source(
+            key="liver",
+            url=(
+                "https://archive.ics.uci.edu/ml/machine-learning-databases/00225/"
+                "Indian%20Liver%20Patient%20Dataset%20(ILPD).csv"
+            ),
+            filename="ilpd_liver.csv",
+            description="UCI Indian Liver Patient Dataset, 583 patients from Andhra Pradesh.",
         ),
     ]
 }
