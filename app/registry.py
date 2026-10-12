@@ -8,7 +8,7 @@ the tree traversal, so no locking is needed around inference.
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import cached_property
 from typing import Any
 
@@ -24,7 +24,9 @@ log = logging.getLogger(__name__)
 # Artifacts written by ml/train.py. Must match ml.config.ARTIFACT_VERSION.
 SUPPORTED_ARTIFACT_VERSION = 2
 
-MODEL_NAMES = ["symptom"]
+# The symptom ranker, then the binary risk models.
+RISK_MODELS = ["heart", "diabetes", "liver"]
+MODEL_NAMES = ["symptom", *RISK_MODELS]
 
 
 class ModelNotAvailable(RuntimeError):
@@ -46,6 +48,12 @@ class LoadedModel:
     disease_symptoms: dict[str, list[str]]
     feature_importances: list[float] | None
     sklearn_version: str = "unknown"
+    # Binary risk models only. The decision threshold, the per-input specs the
+    # request schemas mirror, and a typical value per input for explanations.
+    target: str | None = None
+    threshold: float | None = None
+    feature_specs: list[dict[str, Any]] = field(default_factory=list)
+    reference_values: dict[str, float] = field(default_factory=dict)
 
     @cached_property
     def feature_index(self) -> dict[str, int]:
@@ -86,6 +94,10 @@ def _to_loaded(name: str, bundle: dict[str, Any]) -> LoadedModel:
         disease_symptoms=bundle.get("disease_symptoms", {}),
         feature_importances=bundle.get("feature_importances"),
         sklearn_version=str(bundle.get("sklearn_version", "unknown")),
+        target=bundle.get("target"),
+        threshold=bundle.get("threshold"),
+        feature_specs=list(bundle.get("feature_specs", [])),
+        reference_values=dict(bundle.get("reference_values", {})),
     )
 
 
@@ -160,6 +172,7 @@ class Registry:
                     "loaded": True,
                     "trained_at": model.trained_at,
                     "sklearn_version": model.sklearn_version,
+                    "kind": model.kind,
                     "features": len(model.feature_names),
                     "classes": len(model.classes),
                 }

@@ -19,7 +19,7 @@ from fastapi.responses import JSONResponse
 from app import db
 from app.config import ALLOWED_ORIGINS, API_TITLE, API_VERSION, PRELOAD_MODELS
 from app.registry import ModelNotAvailable, registry
-from app.routers import meta, predict, review
+from app.routers import meta, predict, review, risk
 from app.schemas import HealthResponse
 
 logging.basicConfig(
@@ -49,9 +49,9 @@ app = FastAPI(
     title=API_TITLE,
     version=API_VERSION,
     description=(
-        "Ranks likely conditions from reported symptoms using a Random Forest tuned "
-        "for recall. Every prediction is logged to PostgreSQL so wrong outputs can be "
-        "reviewed and fed back into training."
+        "Ranks likely conditions from reported symptoms, and estimates the risk of heart "
+        "disease, diabetes and liver disease from clinical measurements. Every prediction "
+        "is logged to PostgreSQL so it can be checked against what actually happened."
     ),
     lifespan=lifespan,
 )
@@ -84,6 +84,8 @@ async def model_unavailable_handler(_: Request, exc: ModelNotAvailable) -> JSONR
 app.include_router(meta.router)
 app.include_router(predict.router)
 app.include_router(review.router)
+app.include_router(risk.router)
+app.include_router(risk.review_router)
 
 
 @app.get("/", tags=["meta"], summary="Service description")
@@ -97,11 +99,19 @@ def root() -> dict[str, object]:
             "GET  /symptoms",
             "GET  /diseases",
             "GET  /diseases/{name}/symptoms",
+            "GET  /models",
+            "GET  /models/{name}",
             "POST /predict/symptoms",
+            "POST /predict/heart",
+            "POST /predict/diabetes",
+            "POST /predict/liver",
             "GET  /predictions",
             "GET  /predictions/wrong",
             "GET  /predictions/stats",
             "POST /predictions/{id}/review",
+            "GET  /risk-predictions",
+            "GET  /risk-predictions/stats",
+            "POST /risk-predictions/{id}/review",
         ],
     }
 

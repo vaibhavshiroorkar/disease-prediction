@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class SymptomRequest(BaseModel):
@@ -116,3 +116,130 @@ class HealthResponse(BaseModel):
     version: str
     models: dict[str, Any]
     database: dict[str, Any] = Field(default_factory=dict)
+
+
+# Risk model requests. The field names, ranges and choices mirror the
+# feature_specs saved in each artifact, and tests/test_api.py checks that they
+# still agree. Unknown fields are rejected rather than ignored: a client that
+# sends "cholesterol" instead of "chol" should hear about it, not get a risk
+# computed with cholesterol silently imputed.
+#
+# Optional fields may be left out. The model fills them with the training
+# median, and the response lists which ones it filled.
+
+
+class HeartRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    age: float = Field(..., ge=18, le=100, description="Age in years.", examples=[54])
+    sex: int = Field(..., ge=0, le=1, description="1 for male, 0 for female.", examples=[1])
+    cp: int = Field(
+        ...,
+        ge=1,
+        le=4,
+        description="Chest pain: 1 typical angina, 2 atypical angina, 3 non-anginal pain, 4 asymptomatic.",
+        examples=[4],
+    )
+    trestbps: float | None = Field(None, ge=60, le=250, description="Resting systolic blood pressure, mmHg.")
+    chol: float | None = Field(None, ge=80, le=700, description="Serum cholesterol, mg/dl.")
+    fbs: int | None = Field(None, ge=0, le=1, description="1 if fasting blood sugar is above 120 mg/dl.")
+    restecg: int | None = Field(
+        None, ge=0, le=2, description="Resting ECG: 0 normal, 1 ST-T abnormality, 2 LV hypertrophy."
+    )
+    thalach: float | None = Field(None, ge=50, le=230, description="Max heart rate in an exercise test, bpm.")
+    exang: int | None = Field(None, ge=0, le=1, description="1 if exercise brought on angina.")
+    oldpeak: float | None = Field(None, ge=-3, le=10, description="Exercise ST depression, mm.")
+
+
+class DiabetesRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    pregnancies: float = Field(..., ge=0, le=20, description="Number of times pregnant.", examples=[2])
+    glucose: float | None = Field(
+        None, ge=40, le=300, description="Plasma glucose 2 hours into an oral glucose tolerance test, mg/dl."
+    )
+    blood_pressure: float | None = Field(None, ge=20, le=140, description="Diastolic blood pressure, mmHg.")
+    skin_thickness: float | None = Field(None, ge=5, le=100, description="Triceps skin fold thickness, mm.")
+    insulin: float | None = Field(None, ge=10, le=900, description="2-hour serum insulin, uU/ml.")
+    bmi: float | None = Field(None, ge=10, le=70, description="Body mass index, kg/m2.")
+    pedigree: float | None = Field(
+        None, ge=0.05, le=2.5, description="Diabetes pedigree function, a family-history score."
+    )
+    age: float = Field(..., ge=18, le=100, description="Age in years.", examples=[45])
+
+
+class LiverRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    age: float = Field(..., ge=1, le=100, description="Age in years.", examples=[45])
+    sex: int = Field(..., ge=0, le=1, description="1 for male, 0 for female.", examples=[1])
+    total_bilirubin: float | None = Field(None, ge=0.1, le=80, description="Total bilirubin, mg/dl.")
+    direct_bilirubin: float | None = Field(None, ge=0.05, le=30, description="Direct bilirubin, mg/dl.")
+    alk_phosphatase: float | None = Field(None, ge=20, le=3000, description="Alkaline phosphatase, IU/L.")
+    alt: float | None = Field(None, ge=1, le=3000, description="ALT (SGPT), IU/L.")
+    ast: float | None = Field(None, ge=1, le=6000, description="AST (SGOT), IU/L.")
+    total_proteins: float | None = Field(None, ge=2, le=12, description="Total serum protein, g/dl.")
+    albumin: float | None = Field(None, ge=0.5, le=7, description="Serum albumin, g/dl.")
+    ag_ratio: float | None = Field(None, ge=0.1, le=4, description="Albumin to globulin ratio.")
+
+
+RISK_REQUESTS: dict[str, type[BaseModel]] = {
+    "heart": HeartRequest,
+    "diabetes": DiabetesRequest,
+    "liver": LiverRequest,
+}
+
+
+class RiskFactor(BaseModel):
+    feature: str
+    label: str
+    value: float
+    typical_value: float = Field(..., description="Training median (or most common category).")
+    effect: float = Field(
+        ...,
+        description=(
+            "Risk with this value minus risk with the typical value instead. Positive means "
+            "this input pushed the risk up."
+        ),
+    )
+
+
+class RiskResponse(BaseModel):
+    model: str
+    condition: str = Field(..., description="What the probability is the probability of.")
+    probability: float = Field(..., description="Calibrated risk, 0 to 1.")
+    risk_band: str = Field(
+        ...,
+        description="low (under half the threshold), borderline (under the threshold), or elevated.",
+    )
+    flagged: bool = Field(..., description="True when probability >= threshold.")
+    threshold: float = Field(
+        ..., description="Chosen during training to catch 90% of true cases, at the cost of false alarms."
+    )
+    operating_point: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Sensitivity and specificity this threshold reached on the held-out test set.",
+    )
+    factors: list[RiskFactor] = Field(
+        default_factory=list, description="The supplied inputs that moved this risk the most."
+    )
+    imputed_fields: list[str] = Field(
+        default_factory=list, description="Inputs left out and filled with the training median."
+    )
+    prediction_id: int | None = None
+    model_metrics: dict[str, Any] = Field(default_factory=dict)
+    disclaimer: str
+
+
+class RiskReviewRequest(BaseModel):
+    had_condition: bool = Field(..., description="Whether the patient turned out to have the condition.")
+
+
+class LoggedRiskPrediction(BaseModel):
+    id: int
+    created_at: str | None
+    model: str
+    inputs: dict[str, Any]
+    probability: float
+    flagged: bool
+    had_condition: bool | None
