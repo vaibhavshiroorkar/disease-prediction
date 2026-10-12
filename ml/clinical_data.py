@@ -37,6 +37,9 @@ class FeatureSpec:
     maximum: float | None = None
     choices: dict[int, str] | None = None
     required: bool = False
+    # Long right tail (lab enzymes, insulin). The pipeline takes log1p first so
+    # one patient with an ALT of 2000 does not dominate a linear model.
+    skewed: bool = False
 
     def as_dict(self) -> dict[str, object]:
         out: dict[str, object] = {
@@ -209,10 +212,11 @@ DIABETES_FEATURES = [
     FeatureSpec("blood_pressure", "Diastolic blood pressure", "numeric", "Diastolic blood pressure.",
                 "mmHg", 20, 140),
     FeatureSpec("skin_thickness", "Skin fold thickness", "numeric", "Triceps skin fold thickness.", "mm", 5, 100),
-    FeatureSpec("insulin", "Insulin", "numeric", "2-hour serum insulin.", "uU/ml", 10, 900),
+    FeatureSpec("insulin", "Insulin", "numeric", "2-hour serum insulin.", "uU/ml", 10, 900, skewed=True),
     FeatureSpec("bmi", "BMI", "numeric", "Body mass index.", "kg/m2", 10, 70),
     FeatureSpec("pedigree", "Diabetes pedigree", "numeric",
-                "A score for family history of diabetes, from the original study.", None, 0.05, 2.5),
+                "A score for family history of diabetes, from the original study.", None, 0.05, 2.5,
+                skewed=True),
     FeatureSpec("age", "Age", "numeric", "Age in years.", "years", 18, 100, required=True),
 ]
 
@@ -253,11 +257,13 @@ LIVER_FEATURES = [
     FeatureSpec("age", "Age", "numeric", "Age in years.", "years", 1, 100, required=True),
     FeatureSpec("sex", "Sex", "binary", "1 for male, 0 for female.", choices={0: "female", 1: "male"},
                 required=True),
-    FeatureSpec("total_bilirubin", "Total bilirubin", "numeric", "Total serum bilirubin.", "mg/dl", 0.1, 80),
-    FeatureSpec("direct_bilirubin", "Direct bilirubin", "numeric", "Conjugated bilirubin.", "mg/dl", 0.05, 30),
-    FeatureSpec("alk_phosphatase", "Alkaline phosphatase", "numeric", "ALP.", "IU/L", 20, 3000),
-    FeatureSpec("alt", "ALT (SGPT)", "numeric", "Alanine aminotransferase.", "IU/L", 1, 3000),
-    FeatureSpec("ast", "AST (SGOT)", "numeric", "Aspartate aminotransferase.", "IU/L", 1, 6000),
+    FeatureSpec("total_bilirubin", "Total bilirubin", "numeric", "Total serum bilirubin.", "mg/dl", 0.1, 80,
+                skewed=True),
+    FeatureSpec("direct_bilirubin", "Direct bilirubin", "numeric", "Conjugated bilirubin.", "mg/dl", 0.05, 30,
+                skewed=True),
+    FeatureSpec("alk_phosphatase", "Alkaline phosphatase", "numeric", "ALP.", "IU/L", 20, 3000, skewed=True),
+    FeatureSpec("alt", "ALT (SGPT)", "numeric", "Alanine aminotransferase.", "IU/L", 1, 3000, skewed=True),
+    FeatureSpec("ast", "AST (SGOT)", "numeric", "Aspartate aminotransferase.", "IU/L", 1, 6000, skewed=True),
     FeatureSpec("total_proteins", "Total proteins", "numeric", "Total serum protein.", "g/dl", 2, 12),
     FeatureSpec("albumin", "Albumin", "numeric", "Serum albumin.", "g/dl", 0.5, 7),
     FeatureSpec("ag_ratio", "A/G ratio", "numeric", "Albumin to globulin ratio.", None, 0.1, 4),
