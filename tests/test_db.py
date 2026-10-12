@@ -133,3 +133,43 @@ def test_logging_survives_a_dead_pool() -> None:
         from tests.conftest import TEST_DATABASE_URL
 
         db.init_pool(TEST_DATABASE_URL)
+
+
+def test_risk_prediction_round_trips_its_inputs(clean_table) -> None:
+    prediction_id = clean_table.log_risk_prediction(
+        model="heart",
+        inputs={"age": 54.0, "sex": 1, "cp": 4},
+        imputed=["chol", "trestbps"],
+        probability=0.71,
+        threshold=0.4,
+        flagged=True,
+    )
+    rows = clean_table.recent_risk_predictions(10)
+    assert rows[0]["id"] == prediction_id
+    assert rows[0]["inputs"] == {"age": 54.0, "sex": 1, "cp": 4}
+    assert rows[0]["flagged"] is True
+    assert rows[0]["had_condition"] is None
+
+
+def test_recent_risk_predictions_filter_by_model(clean_table) -> None:
+    for model in ["heart", "liver", "heart"]:
+        clean_table.log_risk_prediction(model, {}, [], 0.5, 0.4, True)
+    assert [r["model"] for r in clean_table.recent_risk_predictions(10, "heart")] == ["heart", "heart"]
+    assert len(clean_table.recent_risk_predictions(10)) == 3
+
+
+def test_risk_stats_measure_the_threshold_on_reviewed_rows(clean_table) -> None:
+    """Two sick patients, one caught; two well patients, one cleared."""
+    cases = [(0.9, True, True), (0.2, False, True), (0.7, True, False), (0.1, False, False)]
+    for probability, flagged, had in cases:
+        prediction_id = clean_table.log_risk_prediction("liver", {}, [], probability, 0.5, flagged)
+        clean_table.record_risk_review(prediction_id, had)
+    clean_table.log_risk_prediction("liver", {}, [], 0.6, 0.5, True)  # not reviewed yet
+
+    stats = clean_table.risk_stats()["models"]["liver"]
+    assert stats["total"] == 5
+    assert stats["reviewed"] == 4
+    assert stats["sensitivity"] == 0.5
+    assert stats["specificity"] == 0.5
+    assert stats["observed_rate"] == 0.5
+    assert stats["mean_predicted"] == pytest.approx(0.475, abs=1e-4)

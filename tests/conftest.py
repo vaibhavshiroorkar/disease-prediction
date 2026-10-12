@@ -63,7 +63,7 @@ def database():
 def clean_table(database):
     """Truncate between tests so counts are predictable."""
     with database.cursor() as cur:
-        cur.execute("truncate table predictions restart identity")
+        cur.execute("truncate table predictions, risk_predictions restart identity")
     yield database
 
 

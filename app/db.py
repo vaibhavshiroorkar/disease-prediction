@@ -131,6 +131,26 @@ create index if not exists predictions_unreviewed_idx
 
 create index if not exists predictions_wrong_idx
     on predictions (created_at desc) where was_correct is false;
+
+-- The binary risk models log here. A separate table because the inputs are
+-- named measurements rather than a symptom list, and the follow-up question is
+-- "did they have it" rather than "what did they have".
+create table if not exists risk_predictions (
+    id                bigserial primary key,
+    created_at        timestamptz not null default now(),
+    model             text        not null,
+    inputs            jsonb       not null,
+    imputed           text[]      not null default '{}',
+    probability       real        not null,
+    threshold         real        not null,
+    flagged           boolean     not null,
+    model_trained_at  text,
+    response_ms       real,
+    had_condition     boolean,
+    reviewed_at       timestamptz
+);
+
+create index if not exists risk_predictions_model_idx on risk_predictions (model, created_at desc);
 """
 
 
@@ -281,6 +301,120 @@ def fetch_training_feedback() -> list[tuple[list[str], str]]:
         )
         return [(list(symptoms), actual) for symptoms, actual in cur.fetchall()]
     return []
+
+
+def log_risk_prediction(
+    model: str,
+    inputs: dict[str, Any],
+    imputed: list[str],
+    probability: float,
+    threshold: float,
+    flagged: bool,
+    model_trained_at: str | None = None,
+    response_ms: float | None = None,
+) -> int | None:
+    """Record one risk prediction. Returns its id, or None if logging is off."""
+    with cursor() as cur:
+        if cur is None:
+            return None
+        cur.execute(
+            """
+            insert into risk_predictions
+                (model, inputs, imputed, probability, threshold, flagged, model_trained_at, response_ms)
+            values (%s, %s, %s, %s, %s, %s, %s, %s)
+            returning id
+            """,
+            (
+                model, json.dumps(inputs), imputed, probability, threshold, flagged,
+                model_trained_at, response_ms,
+            ),
+        )
+        row = cur.fetchone()
+        return int(row[0]) if row else None
+    return None
+
+
+def record_risk_review(prediction_id: int, had_condition: bool) -> bool:
+    """Attach the real outcome to a logged risk prediction."""
+    with cursor() as cur:
+        if cur is None:
+            return False
+        cur.execute(
+            "update risk_predictions set had_condition = %s, reviewed_at = now() where id = %s",
+            (had_condition, prediction_id),
+        )
+        return cur.rowcount > 0
+    return False
+
+
+def recent_risk_predictions(limit: int = 20, model: str | None = None) -> list[dict[str, Any]]:
+    with cursor() as cur:
+        if cur is None:
+            return []
+        cur.execute(
+            """
+            select id, created_at, model, inputs, probability, flagged, had_condition
+              from risk_predictions
+             where %(model)s::text is null or model = %(model)s
+             order by created_at desc
+             limit %(limit)s
+            """,
+            {"model": model, "limit": limit},
+        )
+        return [
+            {
+                "id": r[0],
+                "created_at": r[1].isoformat() if r[1] else None,
+                "model": r[2],
+                "inputs": r[3],
+                "probability": float(r[4]),
+                "flagged": r[5],
+                "had_condition": r[6],
+            }
+            for r in cur.fetchall()
+        ]
+    return []
+
+
+def risk_stats() -> dict[str, Any]:
+    """Per model: how many predictions, how many have an outcome, and how the
+    threshold is doing on the reviewed ones.
+
+    Comparing mean predicted risk with the observed rate is the cheapest live
+    calibration check there is. If they drift apart, the population the API is
+    seeing no longer looks like the training data.
+    """
+    with cursor() as cur:
+        if cur is None:
+            return {"logging_enabled": False, "configured": configured()}
+        cur.execute(
+            """
+            select model,
+                   count(*),
+                   count(*) filter (where had_condition is not null),
+                   avg(probability) filter (where had_condition is not null),
+                   avg(had_condition::int) filter (where had_condition is not null),
+                   count(*) filter (where flagged and had_condition),
+                   count(*) filter (where had_condition),
+                   count(*) filter (where not flagged and had_condition is false),
+                   count(*) filter (where had_condition is false)
+              from risk_predictions
+             group by model
+             order by model
+            """
+        )
+        models = {}
+        for name, total, reviewed, mean_p, observed, tp, positives, tn, negatives in cur.fetchall():
+            models[name] = {
+                "total": int(total),
+                "reviewed": int(reviewed),
+                "mean_predicted": round(float(mean_p), 4) if mean_p is not None else None,
+                "observed_rate": round(float(observed), 4) if observed is not None else None,
+                "sensitivity": round(tp / positives, 4) if positives else None,
+                "specificity": round(tn / negatives, 4) if negatives else None,
+            }
+        return {"logging_enabled": True, "models": models}
+    return {"logging_enabled": False, "configured": configured()}
 
 
 def _row_to_dict(row: tuple) -> dict[str, Any]:
