@@ -1,0 +1,281 @@
+{
+  "name": "liver",
+  "kind": "binary",
+  "classes": 2,
+  "features": 10,
+  "trained_at": "2026-10-12T16:25:25+00:00",
+  "sklearn_version": "1.9.0",
+  "dataset": {
+    "sources": [
+      "https://archive.ics.uci.edu/ml/machine-learning-databases/00225/Indian%20Liver%20Patient%20Dataset%20(ILPD).csv"
+    ],
+    "rows": 570,
+    "rows_train": 456,
+    "rows_test": 114,
+    "prevalence": 0.7123,
+    "cleaning": [
+      "dropped 13 exact duplicate row(s)",
+      "sex: Male/Female mapped to 1/0",
+      "label: selector 1 (patient) -> 1, 2 -> 0, prevalence 0.71",
+      "ag_ratio: 4 missing value(s) left for the pipeline to impute"
+    ]
+  },
+  "metrics": {
+    "comparison": [
+      {
+        "family": "logistic",
+        "roc_auc": 0.7294,
+        "roc_auc_std": 0.0469,
+        "pr_auc": 0.8813,
+        "brier": 0.181,
+        "fit_seconds": 13.0,
+        "ablation": false
+      },
+      {
+        "family": "forest",
+        "roc_auc": 0.7181,
+        "roc_auc_std": 0.04,
+        "pr_auc": 0.8755,
+        "brier": 0.1812,
+        "fit_seconds": 298.1,
+        "ablation": false
+      },
+      {
+        "family": "logistic_no_log",
+        "roc_auc": 0.7161,
+        "roc_auc_std": 0.047,
+        "pr_auc": 0.8767,
+        "brier": 0.1815,
+        "fit_seconds": 8.7,
+        "ablation": true
+      },
+      {
+        "family": "boosting",
+        "roc_auc": 0.7008,
+        "roc_auc_std": 0.0457,
+        "pr_auc": 0.8643,
+        "brier": 0.1912,
+        "fit_seconds": 80.3,
+        "ablation": false
+      },
+      {
+        "family": "dummy",
+        "roc_auc": 0.5,
+        "roc_auc_std": 0.0,
+        "pr_auc": 0.7127,
+        "brier": 0.2048,
+        "fit_seconds": 0.3,
+        "ablation": false
+      }
+    ],
+    "chosen_family": "logistic",
+    "chosen_params": {
+      "C": 0.01
+    },
+    "threshold": {
+      "value": 0.5397,
+      "target_sensitivity": 0.9,
+      "chosen_on": "out-of-fold predictions on the training split"
+    },
+    "test": {
+      "roc_auc": 0.8171,
+      "pr_auc": 0.932,
+      "brier": 0.1564,
+      "log_loss": 0.4593,
+      "sensitivity": 0.8889,
+      "specificity": 0.3333,
+      "ppv": 0.766,
+      "npv": 0.55,
+      "f1": 0.8229,
+      "balanced_accuracy": 0.6111,
+      "accuracy": 0.7281,
+      "confusion": {
+        "tn": 11,
+        "fp": 22,
+        "fn": 9,
+        "tp": 72
+      },
+      "rows": 114,
+      "prevalence": 0.7105
+    },
+    "test_ci95": {
+      "roc_auc": [
+        0.7385,
+        0.8867
+      ],
+      "pr_auc": [
+        0.9026,
+        0.9586
+      ],
+      "brier": [
+        0.1378,
+        0.1751
+      ],
+      "log_loss": [
+        0.4123,
+        0.5054
+      ],
+      "sensitivity": [
+        0.8148,
+        0.9506
+      ],
+      "specificity": [
+        0.1818,
+        0.4848
+      ],
+      "ppv": [
+        0.7222,
+        0.8111
+      ],
+      "npv": [
+        0.3529,
+        0.7647
+      ],
+      "f1": [
+        0.7746,
+        0.8667
+      ],
+      "balanced_accuracy": [
+        0.523,
+        0.6964
+      ],
+      "accuracy": [
+        0.6579,
+        0.7895
+      ]
+    },
+    "calibration": {
+      "ece": 0.1036,
+      "bins": [
+        {
+          "bin": [
+            0.3,
+            0.4
+          ],
+          "rows": 1,
+          "mean_predicted": 0.3857,
+          "observed_rate": 1.0
+        },
+        {
+          "bin": [
+            0.4,
+            0.5
+          ],
+          "rows": 12,
+          "mean_predicted": 0.4526,
+          "observed_rate": 0.3333
+        },
+        {
+          "bin": [
+            0.5,
+            0.6
+          ],
+          "rows": 24,
+          "mean_predicted": 0.5593,
+          "observed_rate": 0.5417
+        },
+        {
+          "bin": [
+            0.6,
+            0.7
+          ],
+          "rows": 16,
+          "mean_predicted": 0.6462,
+          "observed_rate": 0.4375
+        },
+        {
+          "bin": [
+            0.7,
+            0.8
+          ],
+          "rows": 9,
+          "mean_predicted": 0.7515,
+          "observed_rate": 0.5556
+        },
+        {
+          "bin": [
+            0.8,
+            0.9
+          ],
+          "rows": 26,
+          "mean_predicted": 0.8482,
+          "observed_rate": 0.9615
+        },
+        {
+          "bin": [
+            0.9,
+            1.0
+          ],
+          "rows": 26,
+          "mean_predicted": 0.9501,
+          "observed_rate": 1.0
+        }
+      ]
+    },
+    "permutation_importance": [
+      {
+        "feature": "direct_bilirubin",
+        "auc_drop": 0.0145,
+        "std": 0.0195
+      },
+      {
+        "feature": "total_bilirubin",
+        "auc_drop": 0.012,
+        "std": 0.0177
+      },
+      {
+        "feature": "alk_phosphatase",
+        "auc_drop": 0.0109,
+        "std": 0.0158
+      },
+      {
+        "feature": "alt",
+        "auc_drop": 0.0106,
+        "std": 0.0181
+      },
+      {
+        "feature": "age",
+        "auc_drop": 0.0076,
+        "std": 0.0135
+      },
+      {
+        "feature": "albumin",
+        "auc_drop": 0.007,
+        "std": 0.0075
+      },
+      {
+        "feature": "ag_ratio",
+        "auc_drop": 0.0055,
+        "std": 0.0135
+      },
+      {
+        "feature": "ast",
+        "auc_drop": 0.0042,
+        "std": 0.0169
+      },
+      {
+        "feature": "sex",
+        "auc_drop": -0.0041,
+        "std": 0.0022
+      },
+      {
+        "feature": "total_proteins",
+        "auc_drop": -0.0042,
+        "std": 0.0065
+      }
+    ],
+    "odds_ratios": {
+      "age": 1.14,
+      "total_proteins": 1.056,
+      "albumin": 0.949,
+      "ag_ratio": 0.924,
+      "missingindicator_ag_ratio": 0.978,
+      "total_bilirubin": 1.186,
+      "direct_bilirubin": 1.193,
+      "alk_phosphatase": 1.138,
+      "alt": 1.205,
+      "ast": 1.197,
+      "sex": 1.042
+    }
+  }
+}

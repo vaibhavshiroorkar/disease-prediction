@@ -1,0 +1,302 @@
+{
+  "name": "diabetes",
+  "kind": "binary",
+  "classes": 2,
+  "features": 8,
+  "trained_at": "2026-10-12T16:24:23+00:00",
+  "sklearn_version": "1.9.0",
+  "dataset": {
+    "sources": [
+      "https://raw.githubusercontent.com/jbrownlee/Datasets/master/pima-indians-diabetes.data.csv"
+    ],
+    "rows": 768,
+    "rows_train": 614,
+    "rows_test": 154,
+    "prevalence": 0.349,
+    "cleaning": [
+      "glucose: 5 zero(s) treated as missing",
+      "blood_pressure: 35 zero(s) treated as missing",
+      "skin_thickness: 227 zero(s) treated as missing",
+      "insulin: 374 zero(s) treated as missing",
+      "bmi: 11 zero(s) treated as missing",
+      "768 patients, prevalence 0.35"
+    ]
+  },
+  "metrics": {
+    "comparison": [
+      {
+        "family": "logistic",
+        "roc_auc": 0.837,
+        "roc_auc_std": 0.0364,
+        "pr_auc": 0.7358,
+        "brier": 0.1594,
+        "fit_seconds": 9.8,
+        "ablation": false
+      },
+      {
+        "family": "logistic_no_log",
+        "roc_auc": 0.8342,
+        "roc_auc_std": 0.0323,
+        "pr_auc": 0.7284,
+        "brier": 0.1613,
+        "fit_seconds": 6.8,
+        "ablation": true
+      },
+      {
+        "family": "forest",
+        "roc_auc": 0.8331,
+        "roc_auc_std": 0.0377,
+        "pr_auc": 0.7292,
+        "brier": 0.1585,
+        "fit_seconds": 305.5,
+        "ablation": false
+      },
+      {
+        "family": "boosting",
+        "roc_auc": 0.8323,
+        "roc_auc_std": 0.028,
+        "pr_auc": 0.737,
+        "brier": 0.1574,
+        "fit_seconds": 86.9,
+        "ablation": false
+      },
+      {
+        "family": "dummy",
+        "roc_auc": 0.5,
+        "roc_auc_std": 0.0,
+        "pr_auc": 0.3485,
+        "brier": 0.2271,
+        "fit_seconds": 0.2,
+        "ablation": false
+      }
+    ],
+    "chosen_family": "logistic",
+    "chosen_params": {
+      "C": 0.1
+    },
+    "threshold": {
+      "value": 0.2114,
+      "target_sensitivity": 0.9,
+      "chosen_on": "out-of-fold predictions on the training split"
+    },
+    "test": {
+      "roc_auc": 0.8148,
+      "pr_auc": 0.6791,
+      "brier": 0.1705,
+      "log_loss": 0.505,
+      "sensitivity": 0.8889,
+      "specificity": 0.6,
+      "ppv": 0.5455,
+      "npv": 0.9091,
+      "f1": 0.6761,
+      "balanced_accuracy": 0.7444,
+      "accuracy": 0.7013,
+      "confusion": {
+        "tn": 60,
+        "fp": 40,
+        "fn": 6,
+        "tp": 48
+      },
+      "rows": 154,
+      "prevalence": 0.3506
+    },
+    "test_ci95": {
+      "roc_auc": [
+        0.7441,
+        0.8774
+      ],
+      "pr_auc": [
+        0.5834,
+        0.786
+      ],
+      "brier": [
+        0.1393,
+        0.2049
+      ],
+      "log_loss": [
+        0.4256,
+        0.5906
+      ],
+      "sensitivity": [
+        0.7963,
+        0.963
+      ],
+      "specificity": [
+        0.5,
+        0.69
+      ],
+      "ppv": [
+        0.4839,
+        0.6076
+      ],
+      "npv": [
+        0.8462,
+        0.9702
+      ],
+      "f1": [
+        0.6143,
+        0.7376
+      ],
+      "balanced_accuracy": [
+        0.6767,
+        0.8065
+      ],
+      "accuracy": [
+        0.6299,
+        0.7662
+      ]
+    },
+    "calibration": {
+      "ece": 0.0859,
+      "bins": [
+        {
+          "bin": [
+            0.0,
+            0.1
+          ],
+          "rows": 35,
+          "mean_predicted": 0.0655,
+          "observed_rate": 0.0286
+        },
+        {
+          "bin": [
+            0.1,
+            0.2
+          ],
+          "rows": 27,
+          "mean_predicted": 0.1442,
+          "observed_rate": 0.1481
+        },
+        {
+          "bin": [
+            0.2,
+            0.3
+          ],
+          "rows": 18,
+          "mean_predicted": 0.2541,
+          "observed_rate": 0.3333
+        },
+        {
+          "bin": [
+            0.3,
+            0.4
+          ],
+          "rows": 18,
+          "mean_predicted": 0.3518,
+          "observed_rate": 0.5
+        },
+        {
+          "bin": [
+            0.4,
+            0.5
+          ],
+          "rows": 6,
+          "mean_predicted": 0.4461,
+          "observed_rate": 0.6667
+        },
+        {
+          "bin": [
+            0.5,
+            0.6
+          ],
+          "rows": 13,
+          "mean_predicted": 0.548,
+          "observed_rate": 0.3077
+        },
+        {
+          "bin": [
+            0.6,
+            0.7
+          ],
+          "rows": 8,
+          "mean_predicted": 0.6636,
+          "observed_rate": 0.625
+        },
+        {
+          "bin": [
+            0.7,
+            0.8
+          ],
+          "rows": 11,
+          "mean_predicted": 0.7386,
+          "observed_rate": 0.7273
+        },
+        {
+          "bin": [
+            0.8,
+            0.9
+          ],
+          "rows": 15,
+          "mean_predicted": 0.8448,
+          "observed_rate": 0.6667
+        },
+        {
+          "bin": [
+            0.9,
+            1.0
+          ],
+          "rows": 3,
+          "mean_predicted": 0.9381,
+          "observed_rate": 1.0
+        }
+      ]
+    },
+    "permutation_importance": [
+      {
+        "feature": "glucose",
+        "auc_drop": 0.1358,
+        "std": 0.0279
+      },
+      {
+        "feature": "bmi",
+        "auc_drop": 0.0269,
+        "std": 0.0137
+      },
+      {
+        "feature": "pregnancies",
+        "auc_drop": 0.0263,
+        "std": 0.0091
+      },
+      {
+        "feature": "pedigree",
+        "auc_drop": 0.0128,
+        "std": 0.0065
+      },
+      {
+        "feature": "blood_pressure",
+        "auc_drop": 0.0074,
+        "std": 0.0057
+      },
+      {
+        "feature": "age",
+        "auc_drop": 0.0051,
+        "std": 0.0037
+      },
+      {
+        "feature": "insulin",
+        "auc_drop": 0.0044,
+        "std": 0.0044
+      },
+      {
+        "feature": "skin_thickness",
+        "auc_drop": -0.002,
+        "std": 0.0019
+      }
+    ],
+    "odds_ratios": {
+      "pregnancies": 1.369,
+      "glucose": 2.694,
+      "blood_pressure": 0.991,
+      "skin_thickness": 1.062,
+      "bmi": 1.776,
+      "age": 1.164,
+      "missingindicator_glucose": 1.068,
+      "missingindicator_blood_pressure": 1.184,
+      "missingindicator_skin_thickness": 0.958,
+      "missingindicator_bmi": 0.926,
+      "insulin": 1.151,
+      "pedigree": 1.285,
+      "missingindicator_insulin": 1.141
+    }
+  }
+}

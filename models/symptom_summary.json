@@ -1,8 +1,17 @@
 {
+  "name": "symptom",
+  "kind": "multiclass",
   "classes": 41,
   "features": 131,
-  "trained_at": "2026-08-11T20:18:54+00:00",
+  "trained_at": "2026-10-12T16:20:46+00:00",
   "sklearn_version": "1.9.0",
+  "dataset": {
+    "source": "https://raw.githubusercontent.com/anujdutt9/Disease-Prediction-from-Symptoms/master/dataset/training_data.csv",
+    "description": "4920 rows, 132 binary symptoms, 41 diseases (Kaggle disease-symptom dataset).",
+    "rows_raw": 4920,
+    "rows_unique": 304,
+    "rows_feedback": 0
+  },
   "metrics": {
     "search": {
       "candidates": 32,
@@ -24,6 +33,7 @@
       "macro_recall": 1.0,
       "macro_f1": 1.0,
       "top_3_accuracy": 1.0,
+      "log_loss": 0.2947,
       "weakest_classes": []
     },
     "holdout": {
@@ -94,6 +104,44 @@
       "accuracy_std": 0.0117,
       "macro_recall": 0.9209,
       "top_3_accuracy": 0.9919
-    }
+    },
+    "comparison": [
+      {
+        "model": "forest",
+        "accuracy": 1.0,
+        "top_3_accuracy": 1.0,
+        "log_loss": 0.2947,
+        "noise_1_accuracy": 0.977,
+        "noise_1_top_3": 1.0,
+        "noise_2_accuracy": 0.8625,
+        "noise_2_top_3": 0.9875,
+        "noise_3_accuracy": 0.752,
+        "noise_3_top_3": 0.9211
+      },
+      {
+        "model": "bernoulli_nb",
+        "accuracy": 0.977,
+        "top_3_accuracy": 1.0,
+        "log_loss": 0.073,
+        "noise_1_accuracy": 0.9112,
+        "noise_1_top_3": 0.975,
+        "noise_2_accuracy": 0.8329,
+        "noise_2_top_3": 0.9303,
+        "noise_3_accuracy": 0.7928,
+        "noise_3_top_3": 0.9408
+      },
+      {
+        "model": "logistic",
+        "accuracy": 1.0,
+        "top_3_accuracy": 1.0,
+        "log_loss": 0.3165,
+        "noise_1_accuracy": 0.9908,
+        "noise_1_top_3": 1.0,
+        "noise_2_accuracy": 0.9211,
+        "noise_2_top_3": 0.9974,
+        "noise_3_accuracy": 0.8447,
+        "noise_3_top_3": 0.9757
+      }
+    ]
   }
 }

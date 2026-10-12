@@ -1,0 +1,346 @@
+{
+  "name": "heart",
+  "kind": "binary",
+  "classes": 2,
+  "features": 10,
+  "trained_at": "2026-10-12T16:23:21+00:00",
+  "sklearn_version": "1.9.0",
+  "dataset": {
+    "sources": [
+      "https://archive.ics.uci.edu/ml/machine-learning-databases/heart-disease/processed.cleveland.data",
+      "https://archive.ics.uci.edu/ml/machine-learning-databases/heart-disease/processed.hungarian.data",
+      "https://archive.ics.uci.edu/ml/machine-learning-databases/heart-disease/processed.switzerland.data",
+      "https://archive.ics.uci.edu/ml/machine-learning-databases/heart-disease/processed.va.data"
+    ],
+    "rows": 918,
+    "rows_train": 734,
+    "rows_test": 184,
+    "prevalence": 0.5534,
+    "cleaning": [
+      "pooled 920 patients from 4 sites",
+      "chol: 172 zero(s) treated as missing",
+      "trestbps: 1 zero(s) treated as missing",
+      "dropped slope, ca, thal: their missingness identifies the hospital",
+      "dropped 2 exact duplicate row(s)",
+      "target: num > 0, prevalence 0.55"
+    ]
+  },
+  "metrics": {
+    "comparison": [
+      {
+        "family": "forest",
+        "roc_auc": 0.8793,
+        "roc_auc_std": 0.026,
+        "pr_auc": 0.8832,
+        "brier": 0.1406,
+        "fit_seconds": 314.0,
+        "ablation": false
+      },
+      {
+        "family": "logistic",
+        "roc_auc": 0.8785,
+        "roc_auc_std": 0.0268,
+        "pr_auc": 0.8856,
+        "brier": 0.1397,
+        "fit_seconds": 12.5,
+        "ablation": false
+      },
+      {
+        "family": "boosting",
+        "roc_auc": 0.8772,
+        "roc_auc_std": 0.0222,
+        "pr_auc": 0.878,
+        "brier": 0.1388,
+        "fit_seconds": 89.9,
+        "ablation": false
+      },
+      {
+        "family": "dummy",
+        "roc_auc": 0.5,
+        "roc_auc_std": 0.0,
+        "pr_auc": 0.5531,
+        "brier": 0.2472,
+        "fit_seconds": 0.8,
+        "ablation": false
+      }
+    ],
+    "chosen_family": "logistic",
+    "chosen_params": {
+      "C": 1.0
+    },
+    "threshold": {
+      "value": 0.4032,
+      "target_sensitivity": 0.9,
+      "chosen_on": "out-of-fold predictions on the training split"
+    },
+    "test": {
+      "roc_auc": 0.8656,
+      "pr_auc": 0.8852,
+      "brier": 0.1462,
+      "log_loss": 0.4607,
+      "sensitivity": 0.8725,
+      "specificity": 0.6829,
+      "ppv": 0.7739,
+      "npv": 0.8116,
+      "f1": 0.8203,
+      "balanced_accuracy": 0.7777,
+      "accuracy": 0.788,
+      "confusion": {
+        "tn": 56,
+        "fp": 26,
+        "fn": 13,
+        "tp": 89
+      },
+      "rows": 184,
+      "prevalence": 0.5543
+    },
+    "test_ci95": {
+      "roc_auc": [
+        0.808,
+        0.9185
+      ],
+      "pr_auc": [
+        0.8257,
+        0.9368
+      ],
+      "brier": [
+        0.1158,
+        0.1792
+      ],
+      "log_loss": [
+        0.3768,
+        0.5531
+      ],
+      "sensitivity": [
+        0.8039,
+        0.9314
+      ],
+      "specificity": [
+        0.5732,
+        0.7805
+      ],
+      "ppv": [
+        0.7166,
+        0.8364
+      ],
+      "npv": [
+        0.7323,
+        0.8983
+      ],
+      "f1": [
+        0.7677,
+        0.8692
+      ],
+      "balanced_accuracy": [
+        0.7119,
+        0.8401
+      ],
+      "accuracy": [
+        0.7283,
+        0.8478
+      ]
+    },
+    "calibration": {
+      "ece": 0.04,
+      "bins": [
+        {
+          "bin": [
+            0.0,
+            0.1
+          ],
+          "rows": 16,
+          "mean_predicted": 0.0538,
+          "observed_rate": 0.125
+        },
+        {
+          "bin": [
+            0.1,
+            0.2
+          ],
+          "rows": 24,
+          "mean_predicted": 0.1484,
+          "observed_rate": 0.125
+        },
+        {
+          "bin": [
+            0.2,
+            0.3
+          ],
+          "rows": 17,
+          "mean_predicted": 0.2572,
+          "observed_rate": 0.2353
+        },
+        {
+          "bin": [
+            0.3,
+            0.4
+          ],
+          "rows": 12,
+          "mean_predicted": 0.3538,
+          "observed_rate": 0.3333
+        },
+        {
+          "bin": [
+            0.4,
+            0.5
+          ],
+          "rows": 9,
+          "mean_predicted": 0.4496,
+          "observed_rate": 0.5556
+        },
+        {
+          "bin": [
+            0.5,
+            0.6
+          ],
+          "rows": 18,
+          "mean_predicted": 0.5473,
+          "observed_rate": 0.4444
+        },
+        {
+          "bin": [
+            0.6,
+            0.7
+          ],
+          "rows": 13,
+          "mean_predicted": 0.6618,
+          "observed_rate": 0.6923
+        },
+        {
+          "bin": [
+            0.7,
+            0.8
+          ],
+          "rows": 16,
+          "mean_predicted": 0.7555,
+          "observed_rate": 0.8125
+        },
+        {
+          "bin": [
+            0.8,
+            0.9
+          ],
+          "rows": 18,
+          "mean_predicted": 0.861,
+          "observed_rate": 0.8333
+        },
+        {
+          "bin": [
+            0.9,
+            1.0
+          ],
+          "rows": 41,
+          "mean_predicted": 0.9407,
+          "observed_rate": 0.9512
+        }
+      ]
+    },
+    "permutation_importance": [
+      {
+        "feature": "cp",
+        "auc_drop": 0.0878,
+        "std": 0.0167
+      },
+      {
+        "feature": "oldpeak",
+        "auc_drop": 0.027,
+        "std": 0.0118
+      },
+      {
+        "feature": "exang",
+        "auc_drop": 0.0203,
+        "std": 0.0055
+      },
+      {
+        "feature": "thalach",
+        "auc_drop": 0.0191,
+        "std": 0.0087
+      },
+      {
+        "feature": "sex",
+        "auc_drop": 0.0171,
+        "std": 0.0114
+      },
+      {
+        "feature": "age",
+        "auc_drop": 0.0071,
+        "std": 0.0054
+      },
+      {
+        "feature": "chol",
+        "auc_drop": 0.0036,
+        "std": 0.0041
+      },
+      {
+        "feature": "fbs",
+        "auc_drop": 0.0006,
+        "std": 0.0005
+      },
+      {
+        "feature": "restecg",
+        "auc_drop": 0.0004,
+        "std": 0.0013
+      },
+      {
+        "feature": "trestbps",
+        "auc_drop": -0.0007,
+        "std": 0.0013
+      }
+    ],
+    "odds_ratios": {
+      "age": 1.328,
+      "trestbps": 1.066,
+      "chol": 1.289,
+      "thalach": 0.667,
+      "oldpeak": 1.88,
+      "sex": 5.303,
+      "fbs": 1.073,
+      "exang": 2.044,
+      "cp_1.0": 0.839,
+      "cp_2.0": 0.359,
+      "cp_3.0": 0.939,
+      "cp_4.0": 3.528,
+      "restecg_0.0": 0.946,
+      "restecg_1.0": 1.141,
+      "restecg_2.0": 0.924
+    },
+    "leave_one_site_out": [
+      {
+        "site": "cleveland",
+        "rows": 303,
+        "prevalence": 0.4587,
+        "mean_predicted": 0.544,
+        "roc_auc": 0.8675,
+        "sensitivity": 0.8777,
+        "specificity": 0.6768
+      },
+      {
+        "site": "hungarian",
+        "rows": 293,
+        "prevalence": 0.3618,
+        "mean_predicted": 0.5021,
+        "roc_auc": 0.8868,
+        "sensitivity": 0.8774,
+        "specificity": 0.7273
+      },
+      {
+        "site": "switzerland",
+        "rows": 123,
+        "prevalence": 0.935,
+        "mean_predicted": 0.6294,
+        "roc_auc": 0.7293,
+        "sensitivity": 0.887,
+        "specificity": 0.5
+      },
+      {
+        "site": "va",
+        "rows": 199,
+        "prevalence": 0.7437,
+        "mean_predicted": 0.7165,
+        "roc_auc": 0.7508,
+        "sensitivity": 0.9122,
+        "specificity": 0.3333
+      }
+    ]
+  }
+}
