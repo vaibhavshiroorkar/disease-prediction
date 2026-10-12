@@ -278,9 +278,8 @@ def load_liver() -> ClinicalDataset:
     is mapped to 1 and 0. Sex arrives as 'Male'/'Female'. 13 rows are exact
     duplicates. Four patients have no A/G ratio, which stays missing.
 
-    The 'not a patient' group were not healthy volunteers in the usual sense,
-    and the published accuracy on this data tops out around 0.70-0.75 AUC.
-    Expect this to be the hardest of the three.
+    Most published results on this data land around 0.70-0.75 AUC. Expect it
+    to be the hardest of the three.
     """
     notes: list[str] = []
     df = _read("liver", header=None, names=LIVER_COLUMNS)
@@ -304,7 +303,7 @@ def load_liver() -> ClinicalDataset:
         X=df[names].astype(float),
         y=y,
         name="liver",
-        target="referred to the clinic as a liver patient",
+        target="recorded as a liver patient",
         features=LIVER_FEATURES,
         notes=notes,
     )

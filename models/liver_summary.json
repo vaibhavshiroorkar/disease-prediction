@@ -3,7 +3,7 @@
   "kind": "binary",
   "classes": 2,
   "features": 10,
-  "trained_at": "2026-10-12T16:25:25+00:00",
+  "trained_at": "2026-10-12T16:31:14+00:00",
   "sklearn_version": "1.9.0",
   "dataset": {
     "sources": [
@@ -28,7 +28,7 @@
         "roc_auc_std": 0.0469,
         "pr_auc": 0.8813,
         "brier": 0.181,
-        "fit_seconds": 13.0,
+        "fit_seconds": 12.1,
         "ablation": false
       },
       {
@@ -37,7 +37,7 @@
         "roc_auc_std": 0.04,
         "pr_auc": 0.8755,
         "brier": 0.1812,
-        "fit_seconds": 298.1,
+        "fit_seconds": 297.1,
         "ablation": false
       },
       {
@@ -46,7 +46,7 @@
         "roc_auc_std": 0.047,
         "pr_auc": 0.8767,
         "brier": 0.1815,
-        "fit_seconds": 8.7,
+        "fit_seconds": 8.8,
         "ablation": true
       },
       {
@@ -55,7 +55,7 @@
         "roc_auc_std": 0.0457,
         "pr_auc": 0.8643,
         "brier": 0.1912,
-        "fit_seconds": 80.3,
+        "fit_seconds": 79.9,
         "ablation": false
       },
       {
@@ -64,7 +64,7 @@
         "roc_auc_std": 0.0,
         "pr_auc": 0.7127,
         "brier": 0.2048,
-        "fit_seconds": 0.3,
+        "fit_seconds": 0.7,
         "ablation": false
       }
     ],
