@@ -8,9 +8,10 @@ contract: a client cannot render a result without the caveat travelling with it.
 
 ## GET /health
 
-Returns 200 whenever the process is alive. `status` is `degraded` only when the
+Returns 200 whenever the process is alive. `status` is `degraded` only when a
 model artifact could not be loaded. A database that is down does not make the
-service unhealthy, it just stops recording.
+service unhealthy, it just stops recording. `models` has one entry per model
+(symptom, heart, diabetes, liver); the example shows only the first.
 
 ```json
 {
@@ -130,6 +131,155 @@ request is a 422:
 }
 ```
 
+## GET /models
+
+Every model the service runs, with its headline scores, read from the artifacts.
+
+```json
+{
+  "count": 4,
+  "models": [
+    {
+      "name": "heart",
+      "loaded": true,
+      "kind": "binary",
+      "endpoint": "/predict/heart",
+      "features": 10,
+      "condition": "angiographic coronary artery disease (more than 50% narrowing in any major vessel)",
+      "chosen_family": "logistic",
+      "test_roc_auc": 0.8656,
+      "test_roc_auc_ci95": [0.808, 0.9185],
+      "threshold": 0.4032,
+      "sensitivity_at_threshold": 0.8725,
+      "specificity_at_threshold": 0.6829
+    }
+  ]
+}
+```
+
+## GET /models/{name}
+
+One model in full: its inputs (name, label, unit, range, whether required), every
+score from training with its 95% interval, the model comparison, and where the
+data came from. For the risk models, this is the place to read a field's valid
+range. Returns 404 for an unknown name.
+
+## POST /predict/heart, /predict/diabetes, /predict/liver
+
+Each takes named clinical measurements and returns a calibrated risk.
+
+```json
+{"age": 61, "sex": 1, "cp": 4, "thalach": 115, "exang": 1, "oldpeak": 2.5}
+```
+
+| Model | Required | Optional |
+|---|---|---|
+| heart | `age`, `sex` (1 male), `cp` (chest pain 1-4) | `trestbps`, `chol`, `fbs`, `restecg`, `thalach`, `exang`, `oldpeak` |
+| diabetes | `pregnancies`, `age` | `glucose`, `blood_pressure`, `skin_thickness`, `insulin`, `bmi`, `pedigree` |
+| liver | `age`, `sex` (1 male) | `total_bilirubin`, `direct_bilirubin`, `alk_phosphatase`, `alt`, `ast`, `total_proteins`, `albumin`, `ag_ratio` |
+
+Units and ranges are in `/docs` and `/models/{name}`. A value outside its range
+is a 422. So is a field the model does not know. If you send `cholesterol`
+instead of `chol`, you get an error rather than a risk computed with cholesterol
+quietly filled in.
+
+Optional fields you leave out are filled with the training median, the same way
+the model handled missing values during training. The response lists them.
+
+```json
+{
+  "model": "heart",
+  "condition": "angiographic coronary artery disease (more than 50% narrowing in any major vessel)",
+  "probability": 0.9589,
+  "risk_band": "elevated",
+  "flagged": true,
+  "threshold": 0.4032,
+  "operating_point": {
+    "sensitivity": 0.8725, "sensitivity_ci95": [0.8039, 0.9314],
+    "specificity": 0.6829, "specificity_ci95": [0.5732, 0.7805],
+    "ppv": 0.7739, "npv": 0.8116
+  },
+  "factors": [
+    {"feature": "oldpeak", "label": "ST depression", "value": 2.5, "typical_value": 0.6, "effect": 0.0671},
+    {"feature": "exang", "label": "Exercise angina", "value": 1.0, "typical_value": 0.0, "effect": 0.0348},
+    {"feature": "thalach", "label": "Max heart rate", "value": 115.0, "typical_value": 140.0, "effect": 0.0176}
+  ],
+  "imputed_fields": ["trestbps", "chol", "fbs", "restecg"],
+  "prediction_id": 1,
+  "model_metrics": {"chosen_family": "logistic", "test_rows": 184, "roc_auc": 0.8656,
+                    "roc_auc_ci95": [0.808, 0.9185], "calibration_ece": 0.04},
+  "disclaimer": "Educational project. ..."
+}
+```
+
+`threshold` was chosen in training to catch 90% of real cases.
+`operating_point` is what that threshold actually did on the held-out test set.
+`flagged` is `probability >= threshold`.
+
+`risk_band` is relative to the threshold, because the thresholds differ a lot
+between models (about 0.21 for diabetes, 0.54 for liver). It is `low` below
+half the threshold, `borderline` below the threshold, and `elevated` at or
+above it.
+
+`factors` are the three supplied inputs that moved the risk most. For each
+input, the patient is rescored with that one value swapped for the training
+median, and `effect` is the difference. Two limits:
+- An input already at the typical value has no effect, even if it matters. For
+  heart, the most common chest pain type is 4 (asymptomatic), so `cp: 4` never
+  shows up as a factor.
+- Effects shrink when the risk is close to 0 or 1, because the calibrated
+  probability flattens out there.
+
+## Reviewing risk predictions
+
+The risk models log to their own table. A review here records what really
+happened, which is the only way to see whether the calibration holds outside
+the training data.
+
+### GET /risk-predictions
+
+Newest first. `limit` is 1 to 200, default 20. `model` filters to one model.
+
+```json
+[
+  {
+    "id": 1,
+    "created_at": "2026-10-12T16:31:02+00:00",
+    "model": "heart",
+    "inputs": {"age": 61.0, "sex": 1, "cp": 4, "thalach": 115.0, "exang": 1, "oldpeak": 2.5},
+    "probability": 0.9589,
+    "flagged": true,
+    "had_condition": null
+  }
+]
+```
+
+### GET /risk-predictions/stats
+
+Per model. `mean_predicted` and `observed_rate` cover reviewed rows only. If they
+drift apart, the people the API sees no longer look like the training data.
+`sensitivity` and `specificity` are the threshold's live record.
+
+```json
+{
+  "logging_enabled": true,
+  "models": {
+    "heart": {"total": 1, "reviewed": 1, "mean_predicted": 0.9589, "observed_rate": 1.0,
+              "sensitivity": 1.0, "specificity": null}
+  }
+}
+```
+
+### POST /risk-predictions/{id}/review
+
+```json
+{"had_condition": true}
+```
+
+Returns 404 for an unknown id, and 503 when logging is not active. The clinical
+models do not retrain on these yet. They are recorded so that calibration can
+be checked against real outcomes.
+
 ## Reviewing logged predictions
 
 These routes exist to close the loop: find what the model got wrong, record the
@@ -202,8 +352,8 @@ Returns 404 for an unknown id, and 503 when logging is not active.
 
 | Status | Meaning |
 |---|---|
-| 404 | Unknown disease name, or unknown prediction id |
-| 422 | Request failed validation, or no symptom was recognized |
+| 404 | Unknown disease, model or prediction id |
+| 422 | Request failed validation (a value out of range, an unknown field, a missing required field), or no symptom was recognized |
 | 503 | The model artifact is missing, corrupt, or trained on another scikit-learn; or a review was attempted with logging off |
 
 Validation happens at the edge through Pydantic, so a malformed request never
