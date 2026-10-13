@@ -291,7 +291,9 @@ def figures(
     table = calibration_table(y, proba)
     xs = [row["mean_predicted"] for row in table["bins"]]
     ys = [row["observed_rate"] for row in table["bins"]]
-    sizes = [20 + 4 * row["rows"] for row in table["bins"]]
+    # Bubble area tracks each bin's share of the rows, so the plot reads the
+    # same for 150 patients or 40,000.
+    sizes = [20 + 800 * row["rows"] / len(y) for row in table["bins"]]
     ax.plot([0, 1], [0, 1], ls=":", color="grey", lw=1)
     ax.plot(xs, ys, marker="o", lw=1.5)
     ax.scatter(xs, ys, s=sizes, alpha=0.3)
