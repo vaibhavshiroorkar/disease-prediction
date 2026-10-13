@@ -7,7 +7,6 @@ script can print what was changed instead of silently reshaping the input.
 
 from dataclasses import dataclass, field
 
-import numpy as np
 import pandas as pd
 
 from ml.config import SOURCES

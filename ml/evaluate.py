@@ -34,7 +34,7 @@ def per_class_recall(y_true: pd.Series, y_pred: np.ndarray, labels: list[str]) -
     vanishing from the report, which is the case worth seeing.
     """
     scores = recall_score(y_true, y_pred, labels=labels, average=None, zero_division=0)
-    return {label: round(float(score), 4) for label, score in zip(labels, scores)}
+    return {label: round(float(score), 4) for label, score in zip(labels, scores, strict=True)}
 
 
 def weakest_classes(recalls: dict[str, float], limit: int = 5) -> list[dict[str, float]]:
