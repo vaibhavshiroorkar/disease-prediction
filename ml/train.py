@@ -4,7 +4,8 @@
     python -m ml.train --no-search        # symptom ranker, base settings, no grid search
     python -m ml.train --with-feedback    # fold in corrected predictions from Postgres
     python -m ml.train --model heart      # one clinical risk model
-    python -m ml.train --model clinical   # heart, diabetes and liver
+    python -m ml.train --model clinical   # heart, diabetes, liver and dengue
+    python -m ml.train --model malaria    # the blood smear image model
     python -m ml.train --model all        # everything
 
 Each artifact is a self-describing dict: the fitted estimator, the exact feature
@@ -34,19 +35,25 @@ from ml.clinical_eval import (
     bootstrap_ci,
     calibration_table,
     choose_threshold,
+    external_scores,
     figures,
     leave_one_site_out,
     out_of_fold_proba,
     rounded,
 )
-from ml.clinical_model import compare, fit_final, pick, untuned
+from ml.clinical_model import compare, fit_final, fixed, pick, untuned
 from ml.config import ARTIFACT_VERSION, MODELS_DIR, RANDOM_SEED, ROOT, SOURCES
 from ml.datasets import Dataset, load_symptoms, unique_symptom_patterns
 from ml.evaluate import cross_validated_scores, held_out_noise, holdout_scores, noise_robustness
+from ml.malaria import train_malaria
 from ml.model import base_model, baselines, recall_search, search_summary
 
 FIGURES_DIR = ROOT / "docs" / "figures"
 CLINICAL = list(LOADERS)
+
+# Above this many rows, the leave-one-site-out check reuses the settings the
+# main search chose instead of searching again for every site.
+RETUNE_PER_SITE_MAX_ROWS = 20_000
 
 
 def _log(dataset: Dataset) -> None:
@@ -246,7 +253,10 @@ def train_clinical(name: str) -> dict[str, Any]:
     print(f"    - split: {len(X_train)} train, {len(X_test)} test")
 
     print(f"[{name}] comparing model families (nested CV on the training split)")
-    table = compare(data.features, X_train, y_train, data.missing_indicators)
+    table = compare(
+        data.features, X_train, y_train, data.missing_indicators,
+        families=data.families, repeats=data.outer_repeats,
+    )
     for row in table:
         tag = "  (ablation)" if row["ablation"] else ""
         print(
@@ -276,7 +286,8 @@ def train_clinical(name: str) -> dict[str, Any]:
     print(f"    ece          {calibration['ece']:.3f}")
 
     importance = permutation_importance(
-        model, X_test, y_test, scoring="roc_auc", n_repeats=30, random_state=RANDOM_SEED
+        model, X_test, y_test, scoring="roc_auc", n_repeats=30 if len(X_test) < 5_000 else 5,
+        random_state=RANDOM_SEED,
     )
     importances = sorted(
         (
@@ -308,15 +319,30 @@ def train_clinical(name: str) -> dict[str, Any]:
         metrics["odds_ratios"] = odds
 
     if data.groups is not None:
-        print(f"[{name}] leave one hospital out")
+        retune = len(data.X) <= RETUNE_PER_SITE_MAX_ROWS
+        how = "re-tuned per site" if retune else "settings fixed from the search"
+        print(f"[{name}] leave one site out ({how})")
 
-        # Uses every row: each hospital takes a turn as the test set, so the
-        # 80/20 split above does not apply here.
-        metrics["leave_one_site_out"] = leave_one_site_out(
-            lambda: untuned(family, data.features, data.missing_indicators), data.X, data.y, data.groups
-        )
+        def make_model():
+            if retune:
+                return untuned(family, data.features, data.missing_indicators)
+            return fixed(family, data.features, data.missing_indicators, params)
+
+        # Uses every row: each site takes a turn as the test set, so the 80/20
+        # split above does not apply here.
+        metrics["leave_one_site_out"] = leave_one_site_out(make_model, data.X, data.y, data.groups)
+        metrics["leave_one_site_out_tuning"] = "per site" if retune else "fixed from the main search"
         for row in metrics["leave_one_site_out"]:
             print(f"    {row}")
+
+    if data.external is not None:
+        print(f"[{name}] external check on {data.external.label}")
+        external_proba = model.predict_proba(data.external.X)[:, 1]
+        metrics["external"] = {
+            "label": data.external.label,
+            **external_scores(data.external.y.to_numpy(), external_proba, threshold),
+        }
+        print(f"    {metrics['external']}")
 
     for path in figures(name, y_test.to_numpy(), proba, threshold, FIGURES_DIR):
         print(f"    drew {path.relative_to(ROOT).as_posix()}")
@@ -398,7 +424,7 @@ def main() -> int:
     )
     parser.add_argument(
         "--model",
-        choices=["symptom", *CLINICAL, "clinical", "all"],
+        choices=["symptom", *CLINICAL, "clinical", "malaria", "all"],
         default="symptom",
         help="which model to train (default: symptom)",
     )
@@ -420,6 +446,8 @@ def main() -> int:
         names = []
     for name in names:
         write(train_clinical(name))
+    if args.model in {"malaria", "all"}:
+        write(train_malaria(FIGURES_DIR))
     return 0
 
 

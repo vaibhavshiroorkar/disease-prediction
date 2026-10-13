@@ -153,16 +153,21 @@ def compare(
     y: pd.Series,
     missing_indicators: bool,
     seed: int = RANDOM_SEED,
+    families: tuple[str, ...] | None = None,
+    repeats: int = OUTER_REPEATS,
 ) -> list[dict[str, Any]]:
     """Nested cross-validation of every family, best first.
 
-    Each row carries the mean and spread over 15 outer folds. The spread is the
-    part to read: two families whose means sit within one standard deviation
-    of each other are not meaningfully different on this much data.
+    Each row carries the mean and spread over the outer folds (15 by default).
+    The spread is the part to read: two families whose means sit within one
+    standard deviation of each other are not meaningfully different on this
+    much data.
     """
-    outer = RepeatedStratifiedKFold(n_splits=OUTER_FOLDS, n_repeats=OUTER_REPEATS, random_state=seed)
+    outer = RepeatedStratifiedKFold(n_splits=OUTER_FOLDS, n_repeats=repeats, random_state=seed)
     rows = []
     for family, (pipeline, grid) in candidates(features, missing_indicators, seed).items():
+        if families is not None and family not in families:
+            continue
         result = cross_validate(
             tuned(pipeline, grid, seed),
             X,
@@ -214,6 +219,28 @@ def untuned(
         tuned(pipeline, grid, seed),
         method="sigmoid",
         cv=StratifiedKFold(n_splits=5, shuffle=True, random_state=seed),
+    )
+
+
+def fixed(
+    family: str,
+    features: list[FeatureSpec],
+    missing_indicators: bool,
+    params: dict[str, Any],
+    seed: int = RANDOM_SEED,
+) -> CalibratedClassifierCV:
+    """The family with settings already chosen, ready to fit.
+
+    For data too big to re-run the search inside every check. The settings
+    were picked on the training split, so a check that holds out part of that
+    split (one region, say) has seen it once through the search. With four
+    settings and 160,000 rows that leak is small, and the training log says
+    which way the check was run.
+    """
+    pipeline, _ = candidates(features, missing_indicators, seed)[family]
+    pipeline.set_params(**{f"model__{key}": value for key, value in params.items()})
+    return CalibratedClassifierCV(
+        pipeline, method="sigmoid", cv=StratifiedKFold(n_splits=5, shuffle=True, random_state=seed)
     )
 
 

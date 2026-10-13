@@ -12,6 +12,7 @@ from ml.clinical_eval import (
     bootstrap_ci,
     calibration_table,
     choose_threshold,
+    external_scores,
     leave_one_site_out,
 )
 
@@ -97,3 +98,28 @@ def test_leave_one_site_out_scores_every_site() -> None:
     assert [r["site"] for r in results] == ["x", "y", "z"]
     assert all(r["rows"] == 80 for r in results)
     assert all(r["roc_auc"] > 0.7 for r in results)
+
+
+def test_grouped_bootstrap_is_wider_when_rows_cluster() -> None:
+    """Ten copies of each of 20 patients hold the information of 20 rows, not 200."""
+    rng = np.random.default_rng(3)
+    y = np.repeat(rng.integers(0, 2, 20), 10)
+    p = np.clip(0.3 * y + rng.normal(0.35, 0.2, 200), 0, 1)
+    groups = np.repeat(np.arange(20), 10)
+
+    def width(ci):
+        return ci["roc_auc"][1] - ci["roc_auc"][0]
+
+    by_row = bootstrap_ci(y, p, 0.5, resamples=300)
+    by_group = bootstrap_ci(y, p, 0.5, resamples=300, groups=groups)
+    assert width(by_group) > width(by_row)
+
+
+def test_external_scores_report_calibration_drift() -> None:
+    y = np.array([1, 0, 0, 0, 1, 0, 0, 0, 1, 0])
+    p = np.full(10, 0.1)
+    scores = external_scores(y, p, threshold=0.5)
+    assert scores["prevalence"] == 0.3
+    assert scores["mean_predicted"] == 0.1
+    assert scores["rows"] == 10
+    assert scores["sensitivity"] == 0.0

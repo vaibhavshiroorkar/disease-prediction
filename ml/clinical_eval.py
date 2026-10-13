@@ -96,21 +96,34 @@ def bootstrap_ci(
     threshold: float,
     resamples: int = 1000,
     seed: int = RANDOM_SEED,
+    groups: np.ndarray | None = None,
 ) -> dict[str, list[float]]:
     """95% percentile intervals for each score, from stratified resamples.
 
     Positives and negatives are resampled separately so every draw keeps the
     test set's class balance and AUC is always defined.
+
+    With `groups`, whole groups are resampled instead of rows. Use it when rows
+    are not independent. 2,000 cells from 40 patients carry far less
+    information than 2,000 patients, and resampling cells one at a time would
+    give intervals that are too narrow.
     """
     y = np.asarray(y).astype(int)
     proba = np.asarray(proba, dtype=float)
     rng = np.random.default_rng(seed)
     pos = np.flatnonzero(y == 1)
     neg = np.flatnonzero(y == 0)
+    if groups is not None:
+        members = [np.flatnonzero(np.asarray(groups) == g) for g in np.unique(groups)]
 
     draws: dict[str, list[float]] = {}
     for _ in range(resamples):
-        index = np.concatenate([rng.choice(pos, len(pos)), rng.choice(neg, len(neg))])
+        if groups is None:
+            index = np.concatenate([rng.choice(pos, len(pos)), rng.choice(neg, len(neg))])
+        else:
+            index = np.concatenate([members[i] for i in rng.integers(0, len(members), len(members))])
+            if len(np.unique(y[index])) < 2:
+                continue
         scores = binary_scores(y[index], proba[index], threshold)
         for key, value in scores.items():
             if key != "confusion":
@@ -207,6 +220,24 @@ def leave_one_site_out(
     return results
 
 
+def external_scores(y: np.ndarray, proba: np.ndarray, threshold: float) -> dict[str, Any]:
+    """How a trained model does on data from somewhere else, such as a later year.
+
+    Ranking and calibration can fail separately. A model can still sort
+    patients well while its average risk drifts away from the new prevalence.
+    That drift shows as the gap between `mean_predicted` and `prevalence`.
+    """
+    scores = rounded(binary_scores(y, proba, threshold))
+    return {
+        "rows": int(len(y)),
+        "prevalence": round(float(np.mean(y)), 4),
+        "mean_predicted": round(float(np.mean(proba)), 4),
+        **{key: scores[key] for key in ["roc_auc", "pr_auc", "brier"]},
+        **{key: scores[key] for key in ["sensitivity", "specificity", "ppv", "npv"]},
+        "ece": calibration_table(y, proba)["ece"],
+    }
+
+
 def rounded(scores: dict[str, Any], digits: int = 4) -> dict[str, Any]:
     return {k: round(v, digits) if isinstance(v, float) else v for k, v in scores.items()}
 
@@ -217,6 +248,7 @@ def figures(
     proba: np.ndarray,
     threshold: float,
     out_dir: Path,
+    unit: str = "patients",
 ) -> list[Path]:
     """ROC, precision-recall, calibration and confusion plots for the test set.
 
@@ -266,7 +298,7 @@ def figures(
     ax.set(title=f"Calibration (ECE {table['ece']:.3f})", xlabel="Predicted risk", ylabel="Observed rate",
            xlim=(0, 1), ylim=(0, 1))
 
-    fig.suptitle(f"{name}: held-out test set, {len(y)} patients")
+    fig.suptitle(f"{name}: held-out test set, {len(y)} {unit}")
     fig.tight_layout()
     path = out_dir / f"{name}_curves.png"
     fig.savefig(path, dpi=110)
