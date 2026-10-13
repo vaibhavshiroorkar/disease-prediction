@@ -1,0 +1,392 @@
+{
+  "name": "dengue",
+  "kind": "binary",
+  "classes": 2,
+  "features": 25,
+  "trained_at": "2026-10-13T16:45:39+00:00",
+  "sklearn_version": "1.9.0",
+  "dataset": {
+    "sources": [
+      "https://s3.sa-east-1.amazonaws.com/ckan.saude.gov.br/SINAN/Dengue/csv/DENGBR23.csv.zip",
+      "https://s3.sa-east-1.amazonaws.com/ckan.saude.gov.br/SINAN/Dengue/csv/DENGBR25.csv.zip"
+    ],
+    "rows": 200000,
+    "rows_train": 160000,
+    "rows_test": 40000,
+    "prevalence": 0.0241,
+    "cleaning": [
+      "2023: 1645956 notifications, 654045 confirmed by a lab test",
+      "2023: sampled 200000 cases, stratified on the label",
+      "target: warning signs or severe dengue, prevalence 0.024",
+      "2025: 1643215 notifications, 511555 confirmed by a lab test",
+      "2025: sampled 100000 cases, stratified on the label",
+      "2025 held out as an external test set, prevalence 0.039"
+    ]
+  },
+  "metrics": {
+    "comparison": [
+      {
+        "family": "boosting",
+        "roc_auc": 0.7637,
+        "roc_auc_std": 0.0047,
+        "pr_auc": 0.1189,
+        "brier": 0.0224,
+        "fit_seconds": 972.9,
+        "ablation": false
+      },
+      {
+        "family": "logistic",
+        "roc_auc": 0.7404,
+        "roc_auc_std": 0.0071,
+        "pr_auc": 0.0998,
+        "brier": 0.0226,
+        "fit_seconds": 70.3,
+        "ablation": false
+      },
+      {
+        "family": "dummy",
+        "roc_auc": 0.5,
+        "roc_auc_std": 0.0,
+        "pr_auc": 0.0241,
+        "brier": 0.0235,
+        "fit_seconds": 1.6,
+        "ablation": false
+      }
+    ],
+    "chosen_family": "boosting",
+    "chosen_params": {
+      "learning_rate": 0.1,
+      "max_depth": 2,
+      "max_iter": 300
+    },
+    "threshold": {
+      "value": 0.0108,
+      "target_sensitivity": 0.9,
+      "chosen_on": "out-of-fold predictions on the training split"
+    },
+    "test": {
+      "roc_auc": 0.7761,
+      "pr_auc": 0.134,
+      "brier": 0.0221,
+      "log_loss": 0.0984,
+      "sensitivity": 0.9034,
+      "specificity": 0.3491,
+      "ppv": 0.0331,
+      "npv": 0.9932,
+      "f1": 0.0639,
+      "balanced_accuracy": 0.6263,
+      "accuracy": 0.3625,
+      "confusion": {
+        "tn": 13629,
+        "fp": 25408,
+        "fn": 93,
+        "tp": 870
+      },
+      "rows": 40000,
+      "prevalence": 0.0241
+    },
+    "test_ci95": {
+      "roc_auc": [
+        0.7599,
+        0.7921
+      ],
+      "pr_auc": [
+        0.1183,
+        0.1545
+      ],
+      "brier": [
+        0.0219,
+        0.0224
+      ],
+      "log_loss": [
+        0.0968,
+        0.1
+      ],
+      "sensitivity": [
+        0.8847,
+        0.9221
+      ],
+      "specificity": [
+        0.3444,
+        0.354
+      ],
+      "ppv": [
+        0.0324,
+        0.0338
+      ],
+      "npv": [
+        0.9919,
+        0.9945
+      ],
+      "f1": [
+        0.0625,
+        0.0652
+      ],
+      "balanced_accuracy": [
+        0.6167,
+        0.6355
+      ],
+      "accuracy": [
+        0.3578,
+        0.3672
+      ]
+    },
+    "calibration": {
+      "ece": 0.0016,
+      "bins": [
+        {
+          "bin": [
+            0.0,
+            0.1
+          ],
+          "rows": 38722,
+          "mean_predicted": 0.019,
+          "observed_rate": 0.0184
+        },
+        {
+          "bin": [
+            0.1,
+            0.2
+          ],
+          "rows": 874,
+          "mean_predicted": 0.1396,
+          "observed_rate": 0.1682
+        },
+        {
+          "bin": [
+            0.2,
+            0.3
+          ],
+          "rows": 267,
+          "mean_predicted": 0.2429,
+          "observed_rate": 0.2322
+        },
+        {
+          "bin": [
+            0.3,
+            0.4
+          ],
+          "rows": 94,
+          "mean_predicted": 0.3458,
+          "observed_rate": 0.234
+        },
+        {
+          "bin": [
+            0.4,
+            0.5
+          ],
+          "rows": 29,
+          "mean_predicted": 0.4416,
+          "observed_rate": 0.4138
+        },
+        {
+          "bin": [
+            0.5,
+            0.6
+          ],
+          "rows": 12,
+          "mean_predicted": 0.5509,
+          "observed_rate": 0.4167
+        },
+        {
+          "bin": [
+            0.6,
+            0.7
+          ],
+          "rows": 2,
+          "mean_predicted": 0.6433,
+          "observed_rate": 1.0
+        }
+      ]
+    },
+    "permutation_importance": [
+      {
+        "feature": "leukopenia",
+        "auc_drop": 0.0603,
+        "std": 0.0012
+      },
+      {
+        "feature": "days_since_onset",
+        "auc_drop": 0.0464,
+        "std": 0.0029
+      },
+      {
+        "feature": "vomiting",
+        "auc_drop": 0.0197,
+        "std": 0.0017
+      },
+      {
+        "feature": "age",
+        "auc_drop": 0.012,
+        "std": 0.0022
+      },
+      {
+        "feature": "hypertension",
+        "auc_drop": 0.0081,
+        "std": 0.0007
+      },
+      {
+        "feature": "back_pain",
+        "auc_drop": 0.0068,
+        "std": 0.0007
+      },
+      {
+        "feature": "headache",
+        "auc_drop": 0.0049,
+        "std": 0.0009
+      },
+      {
+        "feature": "nausea",
+        "auc_drop": 0.0049,
+        "std": 0.0016
+      },
+      {
+        "feature": "arthralgia",
+        "auc_drop": 0.0048,
+        "std": 0.0013
+      },
+      {
+        "feature": "arthritis",
+        "auc_drop": 0.0029,
+        "std": 0.0013
+      },
+      {
+        "feature": "fever",
+        "auc_drop": 0.0026,
+        "std": 0.0003
+      },
+      {
+        "feature": "autoimmune",
+        "auc_drop": 0.0014,
+        "std": 0.0003
+      },
+      {
+        "feature": "diabetes",
+        "auc_drop": 0.0012,
+        "std": 0.0006
+      },
+      {
+        "feature": "blood_disorder",
+        "auc_drop": 0.001,
+        "std": 0.0006
+      },
+      {
+        "feature": "peptic_ulcer",
+        "auc_drop": 0.0009,
+        "std": 0.0006
+      },
+      {
+        "feature": "petechiae",
+        "auc_drop": 0.0008,
+        "std": 0.0002
+      },
+      {
+        "feature": "kidney_disease",
+        "auc_drop": 0.0005,
+        "std": 0.0002
+      },
+      {
+        "feature": "pregnant",
+        "auc_drop": 0.0003,
+        "std": 0.0005
+      },
+      {
+        "feature": "myalgia",
+        "auc_drop": 0.0003,
+        "std": 0.0008
+      },
+      {
+        "feature": "rash",
+        "auc_drop": 0.0003,
+        "std": 0.0004
+      },
+      {
+        "feature": "conjunctivitis",
+        "auc_drop": 0.0003,
+        "std": 0.0002
+      },
+      {
+        "feature": "sex",
+        "auc_drop": 0.0001,
+        "std": 0.0004
+      },
+      {
+        "feature": "liver_disease",
+        "auc_drop": 0.0001,
+        "std": 0.0002
+      },
+      {
+        "feature": "tourniquet_test",
+        "auc_drop": -0.0,
+        "std": 0.0008
+      },
+      {
+        "feature": "retro_orbital_pain",
+        "auc_drop": 0.0,
+        "std": 0.0002
+      }
+    ],
+    "leave_one_site_out": [
+      {
+        "site": "center_west",
+        "rows": 26261,
+        "prevalence": 0.0193,
+        "mean_predicted": 0.0235,
+        "roc_auc": 0.7793,
+        "sensitivity": 0.9209,
+        "specificity": 0.3313
+      },
+      {
+        "site": "north",
+        "rows": 5484,
+        "prevalence": 0.0164,
+        "mean_predicted": 0.0228,
+        "roc_auc": 0.8373,
+        "sensitivity": 0.9556,
+        "specificity": 0.3226
+      },
+      {
+        "site": "northeast",
+        "rows": 8237,
+        "prevalence": 0.0534,
+        "mean_predicted": 0.0351,
+        "roc_auc": 0.786,
+        "sensitivity": 0.9659,
+        "specificity": 0.2214
+      },
+      {
+        "site": "south",
+        "rows": 46839,
+        "prevalence": 0.0338,
+        "mean_predicted": 0.0186,
+        "roc_auc": 0.7406,
+        "sensitivity": 0.8288,
+        "specificity": 0.4422
+      },
+      {
+        "site": "southeast",
+        "rows": 113179,
+        "prevalence": 0.0194,
+        "mean_predicted": 0.0309,
+        "roc_auc": 0.7578,
+        "sensitivity": 0.8989,
+        "specificity": 0.3368
+      }
+    ],
+    "leave_one_site_out_tuning": "fixed from the main search",
+    "external": {
+      "label": "2025",
+      "rows": 100000,
+      "prevalence": 0.0393,
+      "mean_predicted": 0.0259,
+      "roc_auc": 0.7326,
+      "pr_auc": 0.1403,
+      "brier": 0.0362,
+      "sensitivity": 0.8795,
+      "specificity": 0.3285,
+      "ppv": 0.0509,
+      "npv": 0.9852,
+      "ece": 0.0137
+    }
+  }
+}
