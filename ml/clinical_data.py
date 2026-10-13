@@ -61,6 +61,15 @@ class FeatureSpec:
 
 
 @dataclass
+class Holdout:
+    """A second test set from somewhere the model never trained, like a later year."""
+
+    label: str
+    X: pd.DataFrame
+    y: pd.Series
+
+
+@dataclass
 class ClinicalDataset:
     """Features, a 0/1 target, optional site groups, and a record of the cleaning."""
 
@@ -74,6 +83,12 @@ class ClinicalDataset:
     # Whether the pipeline may add "this value was missing" columns. Off when
     # missingness is a proxy for something the model should not see.
     missing_indicators: bool = True
+    # Which model families compete, and how many times the outer CV repeats.
+    # None means all of them. Large datasets trim both to keep training
+    # under half an hour.
+    families: tuple[str, ...] | None = None
+    outer_repeats: int = 3
+    external: Holdout | None = None
 
     @property
     def feature_names(self) -> list[str]:
@@ -309,8 +324,176 @@ def load_liver() -> ClinicalDataset:
     )
 
 
+YES_NO = {0: "no", 1: "yes"}
+
+
+# SINAN column -> our name, label and description. Every one is a yes/no box on
+# the notification form, filled in when the patient is first seen.
+DENGUE_SIGNS = {
+    "FEBRE": ("fever", "Fever", "Fever at presentation."),
+    "MIALGIA": ("myalgia", "Muscle pain", "Muscle pain."),
+    "CEFALEIA": ("headache", "Headache", "Headache."),
+    "EXANTEMA": ("rash", "Rash", "Skin rash (exanthema)."),
+    "VOMITO": ("vomiting", "Vomiting", "Vomiting."),
+    "NAUSEA": ("nausea", "Nausea", "Nausea."),
+    "DOR_COSTAS": ("back_pain", "Back pain", "Back pain."),
+    "CONJUNTVIT": ("conjunctivitis", "Conjunctivitis", "Red, inflamed eyes."),
+    "ARTRITE": ("arthritis", "Arthritis", "Swollen joints."),
+    "ARTRALGIA": ("arthralgia", "Severe joint pain", "Intense joint pain."),
+    "PETEQUIA_N": ("petechiae", "Petechiae", "Small red or purple spots from bleeding under the skin."),
+    "LEUCOPENIA": ("leukopenia", "Leukopenia", "Low white cell count on a blood test."),
+    "LACO": ("tourniquet_test", "Positive tourniquet test",
+             "Petechiae appear under an inflated blood pressure cuff."),
+    "DOR_RETRO": ("retro_orbital_pain", "Pain behind the eyes", "Pain behind the eyes."),
+}
+DENGUE_CONDITIONS = {
+    "DIABETES": ("diabetes", "Diabetes", "Has diabetes."),
+    "HEMATOLOG": ("blood_disorder", "Blood disorder", "Has a blood disorder, such as sickle cell disease."),
+    "HEPATOPAT": ("liver_disease", "Liver disease", "Has chronic liver disease."),
+    "RENAL": ("kidney_disease", "Kidney disease", "Has chronic kidney disease."),
+    "HIPERTENSA": ("hypertension", "Hypertension", "Has high blood pressure."),
+    "ACIDO_PEPT": ("peptic_ulcer", "Peptic ulcer", "Has a peptic ulcer."),
+    "AUTO_IMUNE": ("autoimmune", "Autoimmune disease", "Has an autoimmune disease."),
+}
+
+DENGUE_FEATURES = [
+    FeatureSpec("age", "Age", "numeric", "Age in years.", "years", 0, 110, required=True),
+    FeatureSpec("sex", "Sex", "binary", "1 for male, 0 for female.", choices={0: "female", 1: "male"},
+                required=True),
+    FeatureSpec("pregnant", "Pregnant", "binary", "1 if pregnant. 0 for men.", choices=YES_NO),
+    FeatureSpec("days_since_onset", "Days since onset", "numeric",
+                "Days from the first symptom to this visit.", "days", 0, 30),
+    *[
+        FeatureSpec(name, label, "binary", description, choices=YES_NO)
+        for name, label, description in [*DENGUE_SIGNS.values(), *DENGUE_CONDITIONS.values()]
+    ],
+]
+
+# The first digit of an IBGE state code is its macro-region.
+BRAZIL_REGIONS = {"1": "north", "2": "northeast", "3": "southeast", "4": "south", "5": "center_west"}
+
+DENGUE_COLUMNS = [
+    *DENGUE_SIGNS, *DENGUE_CONDITIONS,
+    "NU_IDADE_N", "CS_SEXO", "CS_GESTANT", "SG_UF_NOT", "DT_NOTIFIC", "DT_SIN_PRI", "CLASSI_FIN", "CRITERIO",
+]
+
+# CLASSI_FIN codes for a confirmed case: plain dengue, dengue with warning
+# signs, severe dengue. CRITERIO 1 means a laboratory test confirmed it.
+DENGUE_CONFIRMED = {"10", "11", "12"}
+DENGUE_SEVERE = {"11", "12"}
+DENGUE_SAMPLE = 200_000
+DENGUE_EXTERNAL_SAMPLE = 100_000
+
+
+def _sinan_age(code: pd.Series) -> pd.Series:
+    """SINAN packs age as unit digit + three digits: 4031 is 31 years, 3006 is 6 months."""
+    unit = code.str[0]
+    value = pd.to_numeric(code.str[1:], errors="coerce")
+    years = pd.Series(np.nan, index=code.index)
+    years[unit == "4"] = value[unit == "4"]
+    years[unit == "3"] = value[unit == "3"] / 12
+    years[unit == "2"] = value[unit == "2"] / 365
+    years[unit == "1"] = 0.0
+    return years.where(years.between(0, 110))
+
+
+def _read_dengue_year(
+    year: int, sample: int | None, notes: list[str]
+) -> tuple[pd.DataFrame, pd.Series, pd.Series]:
+    raw = _read(f"dengue_{year}", usecols=DENGUE_COLUMNS, dtype=str)
+    confirmed = raw[(raw["CRITERIO"] == "1") & raw["CLASSI_FIN"].isin(DENGUE_CONFIRMED)]
+    notes.append(f"{year}: {len(raw)} notifications, {len(confirmed)} confirmed by a lab test")
+
+    y = confirmed["CLASSI_FIN"].isin(DENGUE_SEVERE).astype(int)
+    if sample is not None and len(confirmed) > sample:
+        # Stratified, so the rare label keeps its exact share in the sample.
+        keep = (
+            y.groupby(y, group_keys=False)
+            .apply(lambda part: part.sample(frac=sample / len(y), random_state=config.RANDOM_SEED))
+            .index
+        )
+        confirmed = confirmed.loc[sorted(keep)]
+        y = y.loc[confirmed.index]
+        notes.append(f"{year}: sampled {len(confirmed)} cases, stratified on the label")
+
+    X = pd.DataFrame(index=confirmed.index)
+    X["age"] = _sinan_age(confirmed["NU_IDADE_N"])
+    X["sex"] = confirmed["CS_SEXO"].map({"M": 1.0, "F": 0.0})
+    # 1-4 are trimesters or "unknown age", 5 is no, 6 is "not applicable" (men,
+    # children). 9 means nobody recorded it, which stays missing.
+    X["pregnant"] = confirmed["CS_GESTANT"].map({"1": 1.0, "2": 1.0, "3": 1.0, "4": 1.0, "5": 0.0, "6": 0.0})
+    days = (
+        pd.to_datetime(confirmed["DT_NOTIFIC"], errors="coerce")
+        - pd.to_datetime(confirmed["DT_SIN_PRI"], errors="coerce")
+    ).dt.days
+    X["days_since_onset"] = days.where(days.between(0, 30))
+    for column, (name, _, _) in [*DENGUE_SIGNS.items(), *DENGUE_CONDITIONS.items()]:
+        # 1 yes, 2 no, 9 or blank unknown.
+        X[name] = confirmed[column].map({"1": 1.0, "2": 0.0})
+
+    regions = confirmed["SG_UF_NOT"].str[0].map(BRAZIL_REGIONS)
+    return X.reset_index(drop=True), y.reset_index(drop=True), regions.reset_index(drop=True)
+
+
+def load_dengue(sample: int | None = DENGUE_SAMPLE, external_sample: int | None = DENGUE_EXTERNAL_SAMPLE
+                ) -> ClinicalDataset:
+    """Brazil's national dengue register: which confirmed cases turn serious.
+
+    The public SINAN files hold confirmed and inconclusive cases only. Cases
+    that tested negative are removed before release. So this data cannot
+    answer "is it dengue?". It can answer the question a clinic faces next:
+    of the patients who have dengue, who will develop warning signs or severe
+    dengue and needs closer watching?
+
+    Fixes and choices:
+    - Only lab-confirmed cases. Cases confirmed on symptoms alone are left out,
+      so every row is known to be dengue.
+    - The target is the final classification: dengue with warning signs, or
+      severe dengue, against plain dengue. It is set when the case is closed.
+    - Every input is from the first visit: age, sex, pregnancy, days since
+      symptoms began, the 14 signs on the form, and 7 chronic conditions.
+    - Left out because they are recorded after the outcome or are the outcome:
+      the warning-sign and severity boxes (ALRM_*, GRAV_*), hospitalization,
+      death, and every lab result.
+    - Age is unpacked from SINAN's unit-plus-value code.
+    - The state's region is kept as a group for a leave-one-region-out check,
+      never as an input. Regions differ in how they classify cases, and a
+      model that learned the region would not travel.
+
+    The first year in config.DENGUE_YEARS trains the model. The second is
+    loaded as an external test set.
+    """
+    notes: list[str] = []
+    train_year, later_year = config.DENGUE_YEARS
+    X, y, regions = _read_dengue_year(train_year, sample, notes)
+    notes.append(f"target: warning signs or severe dengue, prevalence {y.mean():.3f}")
+
+    external = None
+    if config.SOURCES[f"dengue_{later_year}"].path.exists():
+        X_later, y_later, _ = _read_dengue_year(later_year, external_sample, notes)
+        external = Holdout(label=str(later_year), X=X_later, y=y_later)
+        notes.append(f"{later_year} held out as an external test set, prevalence {y_later.mean():.3f}")
+
+    _check_columns(DENGUE_FEATURES, X)
+    return ClinicalDataset(
+        X=X[[spec.name for spec in DENGUE_FEATURES]],
+        y=y,
+        name="dengue",
+        target="dengue with warning signs or severe dengue, among lab-confirmed cases",
+        features=DENGUE_FEATURES,
+        groups=regions,
+        notes=notes,
+        # A nested-CV forest would take hours at this size. One repeat of the
+        # outer CV is plenty with 160,000 training rows.
+        families=("dummy", "logistic", "boosting"),
+        outer_repeats=1,
+        external=external,
+    )
+
+
 LOADERS = {
     "heart": load_heart,
     "diabetes": load_diabetes,
     "liver": load_liver,
+    "dengue": load_dengue,
 }

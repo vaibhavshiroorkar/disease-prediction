@@ -6,22 +6,28 @@ then checks the loader fixes it. No network and no downloaded data needed.
 
 from __future__ import annotations
 
+import zipfile
+
 import numpy as np
+import pandas as pd
 import pytest
 
 from ml import config
 from ml.clinical_data import (
+    DENGUE_COLUMNS,
+    DENGUE_FEATURES,
     DIABETES_FEATURES,
     HEART_FEATURES,
     LIVER_FEATURES,
     LOADERS,
+    load_dengue,
     load_diabetes,
     load_heart,
     load_liver,
 )
 
 raw_present = pytest.mark.skipif(
-    not all(config.SOURCES[key].path.exists() for key in ["diabetes", "liver", "heart_cleveland"]),
+    not all(source.path.exists() for source in config.SOURCES.values()),
     reason="raw data missing, run: python -m scripts.download_data",
 )
 
@@ -120,7 +126,7 @@ def test_missing_file_says_how_to_fetch_it(raw_dir) -> None:
         load_diabetes()
 
 
-@pytest.mark.parametrize("features", [HEART_FEATURES, DIABETES_FEATURES, LIVER_FEATURES])
+@pytest.mark.parametrize("features", [HEART_FEATURES, DIABETES_FEATURES, LIVER_FEATURES, DENGUE_FEATURES])
 def test_specs_are_well_formed(features) -> None:
     names = [spec.name for spec in features]
     assert len(names) == len(set(names))
@@ -130,6 +136,70 @@ def test_specs_are_well_formed(features) -> None:
             assert spec.minimum is not None and spec.maximum is not None and spec.minimum < spec.maximum
         else:
             assert spec.choices
+
+
+def _sinan_row(**overrides: str) -> dict[str, str]:
+    """One notification as SINAN writes it: every sign answered 'no' (2)."""
+    row = {column: "2" for column in DENGUE_COLUMNS}
+    row.update(NU_IDADE_N="4031", CS_SEXO="F", CS_GESTANT="5", SG_UF_NOT="35", DT_NOTIFIC="2023-03-10",
+               DT_SIN_PRI="2023-03-07", CLASSI_FIN="10", CRITERIO="1")
+    row.update(overrides)
+    return row
+
+
+def _write_sinan(raw_dir, year: int, rows: list[dict[str, str]]) -> None:
+    path = raw_dir / f"dengue_sinan_{year}.csv.zip"
+    with zipfile.ZipFile(path, "w") as archive:
+        archive.writestr(f"DENGBR{year % 100}.csv", pd.DataFrame(rows).to_csv(index=False))
+
+
+def test_dengue_keeps_only_lab_confirmed_cases_and_labels_severity(raw_dir) -> None:
+    _write_sinan(raw_dir, 2023, [
+        _sinan_row(),                               # plain dengue
+        _sinan_row(CLASSI_FIN="11"),                # warning signs
+        _sinan_row(CLASSI_FIN="12"),                # severe
+        _sinan_row(CRITERIO="2"),                   # confirmed on symptoms only: dropped
+        _sinan_row(CLASSI_FIN="8"),                 # inconclusive: dropped
+    ])
+    data = load_dengue(sample=None)
+    assert data.y.tolist() == [0, 1, 1]
+    assert data.external is None
+    assert data.feature_names == [spec.name for spec in DENGUE_FEATURES]
+
+
+def test_dengue_decodes_sinan_fields(raw_dir) -> None:
+    _write_sinan(raw_dir, 2023, [
+        _sinan_row(NU_IDADE_N="3006", CS_SEXO="M", CS_GESTANT="6", SG_UF_NOT="13", FEBRE="1", LACO="9"),
+        _sinan_row(CS_GESTANT="2", DT_SIN_PRI="2022-11-01", SG_UF_NOT="43"),
+        _sinan_row(CS_GESTANT="9", NU_IDADE_N="4999"),
+    ])
+    data = load_dengue(sample=None)
+    first, second, third = (data.X.iloc[i] for i in range(3))
+    assert first["age"] == 0.5                     # 6 months
+    assert first["sex"] == 1 and first["pregnant"] == 0
+    assert first["fever"] == 1 and np.isnan(first["tourniquet_test"])
+    assert first["days_since_onset"] == 3
+    assert second["pregnant"] == 1
+    assert np.isnan(second["days_since_onset"])    # 129 days is a data entry error
+    assert np.isnan(third["pregnant"]) and np.isnan(third["age"])
+    assert data.groups.tolist() == ["north", "south", "southeast"]
+
+
+def test_dengue_later_year_becomes_the_external_test_set(raw_dir) -> None:
+    _write_sinan(raw_dir, 2023, [_sinan_row(), _sinan_row(CLASSI_FIN="11")])
+    _write_sinan(raw_dir, 2025, [_sinan_row(CLASSI_FIN="12"), _sinan_row(), _sinan_row()])
+    data = load_dengue(sample=None, external_sample=None)
+    assert data.external.label == "2025"
+    assert data.external.y.tolist() == [1, 0, 0]
+    assert list(data.external.X.columns) == data.feature_names
+
+
+def test_dengue_sample_keeps_the_label_share(raw_dir) -> None:
+    rows = [_sinan_row(CLASSI_FIN="11" if i % 10 == 0 else "10") for i in range(400)]
+    _write_sinan(raw_dir, 2023, rows)
+    data = load_dengue(sample=100)
+    assert len(data.y) == 100
+    assert data.y.sum() == 10
 
 
 @raw_present
