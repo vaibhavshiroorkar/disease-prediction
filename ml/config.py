@@ -20,6 +20,10 @@ ARTIFACT_VERSION = 2
 # reports: Cleveland is the site everyone else's papers use.
 HEART_SITES = ("cleveland", "hungarian", "switzerland", "va")
 
+# The dengue model trains on the first year and is checked on the second. Two
+# separate epidemics are a harder test than a random split of one.
+DENGUE_YEARS = (2023, 2025)
+
 
 @dataclass(frozen=True)
 class Source:
@@ -80,6 +84,30 @@ SOURCES: dict[str, Source] = {
             ),
             filename="ilpd_liver.csv",
             description="UCI Indian Liver Patient Dataset, 583 patients from Andhra Pradesh.",
+        ),
+        *[
+            Source(
+                key=f"dengue_{year}",
+                url=(
+                    "https://s3.sa-east-1.amazonaws.com/ckan.saude.gov.br/SINAN/Dengue/csv/"
+                    f"DENGBR{year % 100}.csv.zip"
+                ),
+                filename=f"dengue_sinan_{year}.csv.zip",
+                description=(
+                    f"Brazil's national dengue notification register (SINAN), {year}. One row per "
+                    "reported case, about 40 MB zipped. Published by the Ministry of Health on OpenDataSUS."
+                ),
+            )
+            for year in DENGUE_YEARS
+        ],
+        Source(
+            key="malaria_cells",
+            url="https://data.lhncbc.nlm.nih.gov/public/Malaria/cell_images.zip",
+            filename="malaria_cell_images.zip",
+            description=(
+                "NIH thin blood smear cell images: 27,558 single red blood cells from 200 patients, "
+                "half parasitized by P. falciparum. 353 MB."
+            ),
         ),
     ]
 }
