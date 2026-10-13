@@ -11,7 +11,8 @@ contract: a client cannot render a result without the caveat travelling with it.
 Returns 200 whenever the process is alive. `status` is `degraded` only when a
 model artifact could not be loaded. A database that is down does not make the
 service unhealthy, it just stops recording. `models` has one entry per model
-(symptom, heart, diabetes, liver); the example shows only the first.
+(symptom, heart, diabetes, liver, dengue, malaria); the example shows only the
+first.
 
 ```json
 {
@@ -164,7 +165,7 @@ score from training with its 95% interval, the model comparison, and where the
 data came from. For the risk models, this is the place to read a field's valid
 range. Returns 404 for an unknown name.
 
-## POST /predict/heart, /predict/diabetes, /predict/liver
+## POST /predict/heart, /predict/diabetes, /predict/liver, /predict/dengue
 
 Each takes named clinical measurements and returns a calibrated risk.
 
@@ -177,6 +178,12 @@ Each takes named clinical measurements and returns a calibrated risk.
 | heart | `age`, `sex` (1 male), `cp` (chest pain 1-4) | `trestbps`, `chol`, `fbs`, `restecg`, `thalach`, `exang`, `oldpeak` |
 | diabetes | `pregnancies`, `age` | `glucose`, `blood_pressure`, `skin_thickness`, `insulin`, `bmi`, `pedigree` |
 | liver | `age`, `sex` (1 male) | `total_bilirubin`, `direct_bilirubin`, `alk_phosphatase`, `alt`, `ast`, `total_proteins`, `albumin`, `ag_ratio` |
+| dengue | `age`, `sex` (1 male) | `pregnant`, `days_since_onset`, then 0/1 for each sign: `fever`, `myalgia`, `headache`, `rash`, `vomiting`, `nausea`, `back_pain`, `conjunctivitis`, `arthritis`, `arthralgia`, `petechiae`, `leukopenia`, `tourniquet_test`, `retro_orbital_pain`, and each chronic condition: `diabetes`, `blood_disorder`, `liver_disease`, `kidney_disease`, `hypertension`, `peptic_ulcer`, `autoimmune` |
+
+The dengue model is for patients whose dengue is already confirmed. Its
+probability is the chance the case becomes dengue with warning signs or severe
+dengue. It cannot say whether someone has dengue in the first place: the public
+data it learned from has no negative cases.
 
 Units and ranges are in `/docs` and `/models/{name}`. A value outside its range
 is a 422. So is a field the model does not know. If you send `cholesterol`
@@ -229,6 +236,54 @@ median, and `effect` is the difference. Two limits:
   shows up as a factor.
 - Effects shrink when the risk is close to 0 or 1, because the calibrated
   probability flattens out there.
+
+## POST /predict/malaria
+
+Takes a picture of one red blood cell from a Giemsa-stained thin blood smear
+and returns the probability that a malaria parasite is inside it. Send the
+image bytes as the request body, not JSON and not a form:
+
+```bash
+curl --data-binary @cell.png -H "Content-Type: image/png" http://localhost:8000/predict/malaria
+```
+
+PNG and JPEG are accepted, up to 2 MB.
+
+```json
+{
+  "model": "malaria",
+  "condition": "red blood cell parasitized by P. falciparum",
+  "probability": 0.9973,
+  "flagged": true,
+  "threshold": 0.8715,
+  "operating_point": {
+    "sensitivity": 0.9255, "sensitivity_ci95": [0.9028, 0.9414],
+    "specificity": 0.9844, "specificity_ci95": [0.9786, 0.9898],
+    "ppv": 0.9837, "npv": 0.9284
+  },
+  "image": {"format": "PNG", "width": 142, "height": 148, "sha256": "f53ac02c4149..."},
+  "prediction_id": 2,
+  "model_metrics": {"chosen_family": "boosting", "test_rows": 5555, "roc_auc": 0.9915,
+                    "roc_auc_ci95": [0.9882, 0.9942], "calibration_ece": 0.0118, "test_patients": 40},
+  "disclaimer": "Educational project. ..."
+}
+```
+
+`test_rows` counts cells. The intervals come from resampling the 40 test
+patients, not the cells. The model was trained on single-cell crops like the NIH images: one cell,
+centred, on a black background. A whole microscope field, a thick smear or a
+photo of a rapid test will still get a number back, but that number means
+nothing. One cell is also not a diagnosis. A microscopist reads hundreds of
+cells per slide.
+
+The logged inputs are the image's format, size and SHA-256 hash, not the image
+itself. A review records whether that cell really was parasitized.
+
+| Status | Meaning |
+|---|---|
+| 415 | Content-Type is not image/png or image/jpeg |
+| 422 | Empty body, or bytes that are not a readable image |
+| 503 | Artifact missing, or trained with a different version of the feature extractor |
 
 ## Reviewing risk predictions
 
@@ -353,6 +408,7 @@ Returns 404 for an unknown id, and 503 when logging is not active.
 | Status | Meaning |
 |---|---|
 | 404 | Unknown disease, model or prediction id |
+| 415 | `/predict/malaria` got something other than image/png or image/jpeg |
 | 422 | Request failed validation (a value out of range, an unknown field, a missing required field), or no symptom was recognized |
 | 503 | The model artifact is missing, corrupt, or trained on another scikit-learn; or a review was attempted with logging off |
 
