@@ -8,6 +8,9 @@ numpy>=1.24
 # The API never imports it.
 matplotlib>=3.8
 
+# Reads blood cell images for the malaria model, in training and in the API.
+pillow>=11.0
+
 # Prediction logging. Optional at runtime: with DATABASE_URL unset the service
 # runs without a database and never imports these.
 psycopg[binary,pool]>=3.1
