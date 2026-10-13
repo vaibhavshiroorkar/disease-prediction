@@ -24,8 +24,11 @@ log = logging.getLogger(__name__)
 # Artifacts written by ml/train.py. Must match ml.config.ARTIFACT_VERSION.
 SUPPORTED_ARTIFACT_VERSION = 2
 
-# The symptom ranker, then the binary risk models.
-RISK_MODELS = ["heart", "diabetes", "liver"]
+# The symptom ranker, then the binary risk models. The tabular ones take named
+# measurements; the image one takes a picture of a single blood cell.
+TABULAR_RISK_MODELS = ["heart", "diabetes", "liver", "dengue"]
+IMAGE_MODELS = ["malaria"]
+RISK_MODELS = [*TABULAR_RISK_MODELS, *IMAGE_MODELS]
 MODEL_NAMES = ["symptom", *RISK_MODELS]
 
 
@@ -54,6 +57,8 @@ class LoadedModel:
     threshold: float | None = None
     feature_specs: list[dict[str, Any]] = field(default_factory=list)
     reference_values: dict[str, float] = field(default_factory=dict)
+    # Image models only: which version of the feature extractor trained it.
+    feature_version: int | None = None
 
     @cached_property
     def feature_index(self) -> dict[str, int]:
@@ -71,7 +76,7 @@ class LoadedModel:
     def importance_ranking(self, top: int = 5) -> list[tuple[str, float]]:
         if not self.feature_importances:
             return []
-        pairs = zip(self.feature_names, self.feature_importances)
+        pairs = zip(self.feature_names, self.feature_importances, strict=True)
         return sorted(pairs, key=lambda p: p[1], reverse=True)[:top]
 
 
@@ -98,6 +103,7 @@ def _to_loaded(name: str, bundle: dict[str, Any]) -> LoadedModel:
         threshold=bundle.get("threshold"),
         feature_specs=list(bundle.get("feature_specs", [])),
         reference_values=dict(bundle.get("reference_values", {})),
+        feature_version=bundle.get("feature_version"),
     )
 
 
@@ -158,7 +164,9 @@ class Registry:
         for name in MODEL_NAMES:
             try:
                 model = self.get(name)
-                log.info("loaded %s (%d features, %d classes)", name, len(model.feature_names), len(model.classes))
+                log.info(
+                    "loaded %s (%d features, %d classes)", name, len(model.feature_names), len(model.classes)
+                )
             except ModelNotAvailable as exc:
                 self._errors[name] = str(exc)
                 log.warning("could not load %s: %s", name, exc)

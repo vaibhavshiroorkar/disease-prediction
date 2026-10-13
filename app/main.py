@@ -49,9 +49,11 @@ app = FastAPI(
     title=API_TITLE,
     version=API_VERSION,
     description=(
-        "Ranks likely conditions from reported symptoms, and estimates the risk of heart "
-        "disease, diabetes and liver disease from clinical measurements. Every prediction "
-        "is logged to PostgreSQL so it can be checked against what actually happened."
+        "Ranks likely conditions from reported symptoms. Estimates the risk of heart "
+        "disease, diabetes and liver disease from clinical measurements, and the risk that a "
+        "confirmed dengue case turns serious. Reads single blood cell images for malaria. "
+        "Every prediction is logged to PostgreSQL so it can be checked against what actually "
+        "happened."
     ),
     lifespan=lifespan,
 )
@@ -105,6 +107,8 @@ def root() -> dict[str, object]:
             "POST /predict/heart",
             "POST /predict/diabetes",
             "POST /predict/liver",
+            "POST /predict/dengue",
+            "POST /predict/malaria",
             "GET  /predictions",
             "GET  /predictions/wrong",
             "GET  /predictions/stats",

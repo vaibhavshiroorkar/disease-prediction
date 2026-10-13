@@ -67,7 +67,7 @@ def symptoms_for_disease(name: str) -> dict[str, object]:
 
 def _summary(model: LoadedModel) -> dict[str, Any]:
     """The headline numbers for one model, in a shape that suits both kinds."""
-    if model.kind == "binary":
+    if model.kind in {"binary", "image"}:
         test = model.metrics.get("test", {})
         return {
             "condition": model.target,

@@ -183,10 +183,49 @@ class LiverRequest(BaseModel):
     ag_ratio: float | None = Field(None, ge=0.1, le=4, description="Albumin to globulin ratio.")
 
 
+def _sign(description: str) -> Any:
+    return Field(None, ge=0, le=1, description=f"1 if present. {description}")
+
+
+class DengueRequest(BaseModel):
+    """A patient already confirmed to have dengue, as seen at their first visit."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    age: float = Field(..., ge=0, le=110, description="Age in years.", examples=[34])
+    sex: int = Field(..., ge=0, le=1, description="1 for male, 0 for female.", examples=[0])
+    pregnant: int | None = Field(None, ge=0, le=1, description="1 if pregnant. 0 for men.")
+    days_since_onset: float | None = Field(
+        None, ge=0, le=30, description="Days from the first symptom to this visit."
+    )
+    fever: int | None = _sign("Fever at presentation.")
+    myalgia: int | None = _sign("Muscle pain.")
+    headache: int | None = _sign("Headache.")
+    rash: int | None = _sign("Skin rash (exanthema).")
+    vomiting: int | None = _sign("Vomiting.")
+    nausea: int | None = _sign("Nausea.")
+    back_pain: int | None = _sign("Back pain.")
+    conjunctivitis: int | None = _sign("Red, inflamed eyes.")
+    arthritis: int | None = _sign("Swollen joints.")
+    arthralgia: int | None = _sign("Intense joint pain.")
+    petechiae: int | None = _sign("Small red or purple spots from bleeding under the skin.")
+    leukopenia: int | None = _sign("Low white cell count on a blood test.")
+    tourniquet_test: int | None = _sign("Petechiae appear under an inflated blood pressure cuff.")
+    retro_orbital_pain: int | None = _sign("Pain behind the eyes.")
+    diabetes: int | None = _sign("Has diabetes.")
+    blood_disorder: int | None = _sign("Has a blood disorder, such as sickle cell disease.")
+    liver_disease: int | None = _sign("Has chronic liver disease.")
+    kidney_disease: int | None = _sign("Has chronic kidney disease.")
+    hypertension: int | None = _sign("Has high blood pressure.")
+    peptic_ulcer: int | None = _sign("Has a peptic ulcer.")
+    autoimmune: int | None = _sign("Has an autoimmune disease.")
+
+
 RISK_REQUESTS: dict[str, type[BaseModel]] = {
     "heart": HeartRequest,
     "diabetes": DiabetesRequest,
     "liver": LiverRequest,
+    "dengue": DengueRequest,
 }
 
 
@@ -226,6 +265,31 @@ class RiskResponse(BaseModel):
     imputed_fields: list[str] = Field(
         default_factory=list, description="Inputs left out and filled with the training median."
     )
+    prediction_id: int | None = None
+    model_metrics: dict[str, Any] = Field(default_factory=dict)
+    disclaimer: str
+
+
+class ImageInfo(BaseModel):
+    format: str | None
+    width: int
+    height: int
+    sha256: str = Field(..., description="Hash of the uploaded bytes, so a reviewer can match the image.")
+
+
+class MalariaResponse(BaseModel):
+    model: str
+    condition: str
+    probability: float = Field(..., description="Calibrated probability that this cell is parasitized.")
+    flagged: bool = Field(..., description="True when probability >= threshold.")
+    threshold: float = Field(
+        ..., description="Chosen during training to catch 90% of infected cells, at the cost of false alarms."
+    )
+    operating_point: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Sensitivity and specificity this threshold reached on the held-out patients.",
+    )
+    image: ImageInfo
     prediction_id: int | None = None
     model_metrics: dict[str, Any] = Field(default_factory=dict)
     disclaimer: str

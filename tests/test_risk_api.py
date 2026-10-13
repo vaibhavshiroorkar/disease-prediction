@@ -4,10 +4,18 @@ from __future__ import annotations
 
 import pytest
 
-from app.registry import RISK_MODELS, registry
+from app.registry import TABULAR_RISK_MODELS, registry
 from app.routers.risk import risk_band
 from app.schemas import RISK_REQUESTS
 from tests.conftest import requires_db, requires_model
+from tests.test_malaria import cell, png_bytes
+
+DENGUE_SIGNS = [
+    "fever", "myalgia", "headache", "rash", "vomiting", "nausea", "back_pain", "conjunctivitis",
+    "arthritis", "arthralgia", "petechiae", "leukopenia", "tourniquet_test", "retro_orbital_pain",
+    "diabetes", "blood_disorder", "liver_disease", "kidney_disease", "hypertension", "peptic_ulcer",
+    "autoimmune",
+]
 
 EXAMPLES = {
     "heart": {"age": 54, "sex": 1, "cp": 4, "trestbps": 130, "chol": 246, "fbs": 0,
@@ -16,11 +24,14 @@ EXAMPLES = {
                  "insulin": 125, "bmi": 32, "pedigree": 0.37, "age": 33},
     "liver": {"age": 45, "sex": 1, "total_bilirubin": 1.0, "direct_bilirubin": 0.3, "alk_phosphatase": 210,
               "alt": 35, "ast": 40, "total_proteins": 6.6, "albumin": 3.1, "ag_ratio": 0.95},
+    "dengue": {"age": 34, "sex": 0, "pregnant": 0, "days_since_onset": 3,
+               **{sign: 0 for sign in DENGUE_SIGNS}, "fever": 1, "headache": 1, "myalgia": 1},
 }
 REQUIRED_ONLY = {
     "heart": {"age": 54, "sex": 1, "cp": 4},
     "diabetes": {"pregnancies": 2, "age": 33},
     "liver": {"age": 45, "sex": 1},
+    "dengue": {"age": 34, "sex": 0},
 }
 
 
@@ -30,7 +41,7 @@ def test_risk_band_is_relative_to_the_threshold(probability: float, band: str) -
 
 
 @requires_model
-@pytest.mark.parametrize("name", RISK_MODELS)
+@pytest.mark.parametrize("name", TABULAR_RISK_MODELS)
 def test_request_schema_matches_the_artifact(name: str) -> None:
     """The schemas are hand-written for readable docs. This keeps them honest."""
     model = registry.get(name)
@@ -47,7 +58,7 @@ def test_request_schema_matches_the_artifact(name: str) -> None:
 
 
 @requires_model
-@pytest.mark.parametrize("name", RISK_MODELS)
+@pytest.mark.parametrize("name", TABULAR_RISK_MODELS)
 def test_full_request_returns_a_probability_and_nothing_imputed(client, name: str) -> None:
     response = client.post(f"/predict/{name}", json=EXAMPLES[name])
     assert response.status_code == 200, response.text
@@ -60,7 +71,7 @@ def test_full_request_returns_a_probability_and_nothing_imputed(client, name: st
 
 
 @requires_model
-@pytest.mark.parametrize("name", RISK_MODELS)
+@pytest.mark.parametrize("name", TABULAR_RISK_MODELS)
 def test_left_out_measurements_are_imputed_and_reported(client, name: str) -> None:
     body = client.post(f"/predict/{name}", json=REQUIRED_ONLY[name]).json()
     assert set(body["imputed_fields"]) == set(EXAMPLES[name]) - set(REQUIRED_ONLY[name])
@@ -68,7 +79,7 @@ def test_left_out_measurements_are_imputed_and_reported(client, name: str) -> No
 
 
 @requires_model
-@pytest.mark.parametrize("name", RISK_MODELS)
+@pytest.mark.parametrize("name", TABULAR_RISK_MODELS)
 def test_out_of_range_and_unknown_fields_are_rejected(client, name: str) -> None:
     assert client.post(f"/predict/{name}", json={**EXAMPLES[name], "age": 400}).status_code == 422
     assert client.post(f"/predict/{name}", json={**EXAMPLES[name], "cholesterol": 200}).status_code == 422
@@ -107,7 +118,7 @@ def test_diabetes_risk_rises_with_glucose(client) -> None:
 @requires_model
 def test_models_catalogue_lists_every_model(client) -> None:
     body = client.get("/models").json()
-    assert body["count"] == 4
+    assert body["count"] == 6
     by_name = {m["name"]: m for m in body["models"]}
     assert by_name["heart"]["endpoint"] == "/predict/heart"
     assert by_name["symptom"]["endpoint"] == "/predict/symptoms"
@@ -120,6 +131,55 @@ def test_model_description_carries_inputs_and_scores(client) -> None:
     assert [i["name"] for i in body["inputs"]][:3] == ["age", "sex", "cp"]
     assert body["metrics"]["leave_one_site_out"]
     assert client.get("/models/kidney").status_code == 404
+
+
+def test_every_tabular_model_has_a_request_schema() -> None:
+    assert set(RISK_REQUESTS) == set(TABULAR_RISK_MODELS)
+
+
+@requires_model
+def test_dengue_risk_rises_with_bleeding_signs(client) -> None:
+    """Petechiae, a positive tourniquet test and leukopenia are the textbook early signs of trouble."""
+    base = EXAMPLES["dengue"]
+    calm = client.post("/predict/dengue", json=base).json()
+    bleeding = client.post(
+        "/predict/dengue", json={**base, "petechiae": 1, "tourniquet_test": 1, "leukopenia": 1}
+    ).json()
+    assert bleeding["probability"] > calm["probability"]
+    assert {f["feature"] for f in bleeding["factors"]} & {"petechiae", "tourniquet_test", "leukopenia"}
+
+
+@requires_model
+def test_malaria_scores_a_cell_image(client) -> None:
+    response = client.post(
+        "/predict/malaria", content=png_bytes(cell(False)), headers={"Content-Type": "image/png"}
+    )
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert 0.0 <= body["probability"] <= 1.0
+    assert body["flagged"] == (body["probability"] >= body["threshold"])
+    assert body["image"]["width"] == 120 and len(body["image"]["sha256"]) == 64
+    assert "not medical advice" in body["disclaimer"]
+
+
+@requires_model
+def test_malaria_stained_dot_raises_the_probability(client) -> None:
+    def score(image) -> float:
+        response = client.post("/predict/malaria", content=png_bytes(image),
+                               headers={"Content-Type": "image/png"})
+        return response.json()["probability"]
+
+    assert score(cell(True)) > score(cell(False))
+
+
+@requires_model
+def test_malaria_rejects_what_is_not_an_image(client) -> None:
+    def post(content: bytes, kind: str) -> int:
+        return client.post("/predict/malaria", content=content, headers={"Content-Type": kind}).status_code
+
+    assert post(png_bytes(cell(False)), "application/json") == 415
+    assert post(b"", "image/png") == 422
+    assert post(b"not an image at all", "image/png") == 422
 
 
 @requires_model

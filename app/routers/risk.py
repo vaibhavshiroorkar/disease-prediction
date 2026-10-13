@@ -1,12 +1,15 @@
-"""Risk prediction routes for the binary clinical models, and their review loop.
+"""Risk prediction routes for the binary models, and their review loop.
 
-Each route takes named measurements, fills any the client left out with the
-training median, and returns a calibrated probability. With it come the
+The tabular routes take named measurements, fill any the client left out with
+the training median, and return a calibrated probability. With it come the
 threshold the model was tuned to and which inputs moved the answer.
+
+The malaria route takes a picture of one blood cell instead.
 """
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import math
 import time
@@ -14,17 +17,20 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel
 
 from app import db
 from app.config import DISCLAIMER
 from app.registry import RISK_MODELS, LoadedModel, ModelNotAvailable, registry
 from app.schemas import (
+    DengueRequest,
     DiabetesRequest,
     HeartRequest,
+    ImageInfo,
     LiverRequest,
     LoggedRiskPrediction,
+    MalariaResponse,
     ReviewResponse,
     RiskFactor,
     RiskResponse,
@@ -185,6 +191,102 @@ def predict_diabetes(request: DiabetesRequest) -> RiskResponse:
 def predict_liver(request: LiverRequest) -> RiskResponse:
     """Trained on 570 patients from Andhra Pradesh. The weakest of the three models; see /models/liver."""
     return predict_risk("liver", request)
+
+
+@router.post(
+    "/dengue",
+    response_model=RiskResponse,
+    summary="Risk that a confirmed dengue case turns serious",
+)
+def predict_dengue(request: DengueRequest) -> RiskResponse:
+    """For a patient whose dengue is already confirmed: the chance it becomes dengue with
+    warning signs or severe dengue. Trained on 2023 lab-confirmed cases from Brazil's national
+    register and checked on 2025. It does not say whether someone has dengue."""
+    return predict_risk("dengue", request)
+
+
+IMAGE_TYPES = {"image/png", "image/jpeg"}
+
+
+@router.post(
+    "/malaria",
+    response_model=MalariaResponse,
+    summary="Is this red blood cell infected with malaria?",
+    openapi_extra={
+        "requestBody": {
+            "required": True,
+            "content": {kind: {"schema": {"type": "string", "format": "binary"}} for kind in IMAGE_TYPES},
+        }
+    },
+)
+async def predict_malaria(request: Request) -> MalariaResponse:
+    """Send the image bytes as the body, with Content-Type image/png or image/jpeg:
+
+        curl --data-binary @cell.png -H "Content-Type: image/png" localhost:8000/predict/malaria
+
+    The image must be one red blood cell cropped from a Giemsa-stained thin smear, like the
+    NIH training images. A whole field of view, a thick smear or a photo of a test strip will
+    get a number back, but the number means nothing. One cell is also not a diagnosis: a
+    microscopist reads hundreds of cells per slide.
+    """
+    # Imported here so the tabular routes never pay for Pillow.
+    from app.cells import FEATURE_VERSION, cell_features, read_image
+
+    started = time.perf_counter()
+    model = _model("malaria")
+    if model.threshold is None or model.feature_version != FEATURE_VERSION:
+        raise HTTPException(
+            status_code=503,
+            detail=f"malaria.joblib was built with feature version {model.feature_version}, "
+            f"the code is at {FEATURE_VERSION}; retrain it",
+        )
+
+    kind = request.headers.get("content-type", "").split(";")[0].strip().lower()
+    if kind not in IMAGE_TYPES:
+        raise HTTPException(status_code=415, detail=f"send image/png or image/jpeg, not {kind or 'nothing'}")
+    data = await request.body()
+    if not data:
+        raise HTTPException(status_code=422, detail="the request body is empty; send the image bytes")
+    try:
+        image = read_image(data)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    features = cell_features(image).reshape(1, -1)
+    probability = float(model.estimator.predict_proba(features)[0, 1])
+    flagged = probability >= model.threshold
+    info = ImageInfo(
+        format=image.format, width=image.width, height=image.height, sha256=hashlib.sha256(data).hexdigest()
+    )
+    metrics, operating = _headline(model)
+    metrics["test_patients"] = model.metrics.get("test", {}).get("patients")
+    elapsed_ms = (time.perf_counter() - started) * 1000
+
+    prediction_id = db.log_risk_prediction(
+        model="malaria",
+        inputs=info.model_dump(),
+        imputed=[],
+        probability=round(probability, 4),
+        threshold=round(model.threshold, 4),
+        flagged=flagged,
+        model_trained_at=model.trained_at,
+        response_ms=round(elapsed_ms, 2),
+    )
+    log.info("malaria cell p=%.3f (threshold %.3f) in %.1fms id=%s",
+             probability, model.threshold, elapsed_ms, prediction_id)
+
+    return MalariaResponse(
+        model="malaria",
+        condition=model.target or "malaria",
+        probability=round(probability, 4),
+        flagged=flagged,
+        threshold=round(model.threshold, 4),
+        operating_point=operating,
+        image=info,
+        prediction_id=prediction_id,
+        model_metrics=metrics,
+        disclaimer=DISCLAIMER,
+    )
 
 
 @review_router.get("", response_model=list[LoggedRiskPrediction], summary="Recently logged risk predictions")
