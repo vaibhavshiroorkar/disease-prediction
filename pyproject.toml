@@ -2,7 +2,7 @@
 name = "disease-prediction-system"
 version = "1.0.0"
 description = "FastAPI service that ranks likely conditions from reported symptoms"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -16,7 +16,7 @@ filterwarnings = [
 
 [tool.ruff]
 line-length = 110
-target-version = "py310"
+target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]

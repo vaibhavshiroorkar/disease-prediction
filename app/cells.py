@@ -23,6 +23,7 @@ DARK_STEPS = (0.15, 0.25, 0.35, 0.5)
 GRID = 4
 ORIENTATIONS = 8
 MAX_IMAGE_BYTES = 2_000_000
+MAX_IMAGE_PIXELS = 4_000_000
 
 
 def _feature_names() -> list[str]:
@@ -50,6 +51,8 @@ def read_image(data: bytes) -> Image.Image:
         raise ValueError(f"image is {len(data)} bytes; the limit is {MAX_IMAGE_BYTES}")
     try:
         image = Image.open(io.BytesIO(data))
+        if image.width * image.height > MAX_IMAGE_PIXELS:
+            raise ValueError(f"image dimensions exceed {MAX_IMAGE_PIXELS} pixels")
         image.load()
     except Exception as exc:  # noqa: BLE001 - Pillow raises many types for bad input
         raise ValueError(f"not a readable image: {exc}") from exc

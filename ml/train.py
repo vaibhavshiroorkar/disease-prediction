@@ -18,7 +18,7 @@ from __future__ import annotations
 import argparse
 import json
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import joblib
@@ -46,7 +46,7 @@ from ml.config import ARTIFACT_VERSION, MODELS_DIR, RANDOM_SEED, ROOT, SOURCES
 from ml.datasets import Dataset, load_symptoms, unique_symptom_patterns
 from ml.evaluate import cross_validated_scores, held_out_noise, holdout_scores, noise_robustness
 from ml.malaria import train_malaria
-from ml.model import base_model, baselines, recall_search, search_summary
+from ml.model import base_model, baselines, recall_search, search_summary, symptom_model
 
 FIGURES_DIR = ROOT / "docs" / "figures"
 CLINICAL = list(LOADERS)
@@ -137,21 +137,23 @@ def train(search: bool = True, with_feedback: bool = False) -> dict[str, Any]:
             y = pd.concat([y, feedback.y], ignore_index=True)
 
     started = time.perf_counter()
-    metrics: dict[str, Any] = {}
+    metrics: dict[str, Any] = {"chosen_family": "logistic"}
 
     if search:
-        print("[symptom] grid searching on macro recall")
+        print("[symptom] tuning the reference forest on macro recall")
         grid = recall_search()
         grid.fit(X, y)
         metrics["search"] = search_summary(grid)
-        model = grid.best_estimator_
+        reference_forest = grid.best_estimator_
         print(f"    best params: {grid.best_params_}")
         print(
             f"    cv macro recall {metrics['search']['cv_recall_macro']:.4f}"
             f"  accuracy {metrics['search']['cv_accuracy']:.4f}"
         )
     else:
-        model = base_model()
+        reference_forest = base_model()
+
+    model = symptom_model()
 
     print("[symptom] cross-validating the chosen model")
     metrics["cross_validation"] = cross_validated_scores(model, X, y)
@@ -169,16 +171,21 @@ def train(search: bool = True, with_feedback: bool = False) -> dict[str, Any]:
 
     for label, scores in metrics.items():
         # per_class_recall is 41 entries; it belongs in the artifact, not the log.
-        shown = {k: v for k, v in scores.items() if k != "per_class_recall"}
+        shown = scores
+        if isinstance(scores, dict):
+            shown = {k: v for k, v in scores.items() if k != "per_class_recall"}
         print(f"    {label}: {shown}")
 
     print("[symptom] comparing against simpler models on held-out noisy patterns")
-    metrics["comparison"] = compare_symptom_models(model, unique.X, unique.y)
+    metrics["comparison"] = compare_symptom_models(reference_forest, unique.X, unique.y)
     for row in metrics["comparison"]:
         print(f"    {row}")
 
     elapsed = round(time.perf_counter() - started, 1)
 
+    magnitudes = np.mean(np.abs(model.coef_), axis=0)
+    importances = magnitudes / magnitudes.sum() if magnitudes.sum() else magnitudes
+    metrics["feature_importance_method"] = "normalized mean absolute logistic coefficient"
     return {
         "artifact_version": ARTIFACT_VERSION,
         "name": "symptom",
@@ -187,7 +194,7 @@ def train(search: bool = True, with_feedback: bool = False) -> dict[str, Any]:
         "feature_names": unique.feature_names,
         "classes": [str(c) for c in model.classes_],
         "disease_symptoms": disease_symptom_map(unique.X, unique.y),
-        "feature_importances": [float(v) for v in model.feature_importances_],
+        "feature_importances": [float(v) for v in importances],
         "metrics": metrics,
         "dataset": {
             "source": SOURCES["symptom_train"].url,
@@ -196,7 +203,7 @@ def train(search: bool = True, with_feedback: bool = False) -> dict[str, Any]:
             "rows_unique": int(len(unique.X)),
             "rows_feedback": feedback_rows,
         },
-        "trained_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "trained_at": datetime.now(UTC).isoformat(timespec="seconds"),
         "sklearn_version": sklearn.__version__,
         "train_seconds": elapsed,
     }
@@ -367,7 +374,7 @@ def train_clinical(name: str) -> dict[str, Any]:
             "prevalence": round(data.prevalence, 4),
             "cleaning": data.notes,
         },
-        "trained_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "trained_at": datetime.now(UTC).isoformat(timespec="seconds"),
         "sklearn_version": sklearn.__version__,
         "train_seconds": round(time.perf_counter() - started, 1),
     }

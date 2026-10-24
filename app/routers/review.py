@@ -10,12 +10,13 @@ is unset, so the API behaves the same with or without a database attached.
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app import db
 from app.schemas import LoggedPrediction, ReviewRequest, ReviewResponse
+from app.security import require_admin
 
-router = APIRouter(prefix="/predictions", tags=["review"])
+router = APIRouter(prefix="/predictions", tags=["review"], dependencies=[Depends(require_admin)])
 
 
 @router.get("", response_model=list[LoggedPrediction], summary="Recently logged predictions")

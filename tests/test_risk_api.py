@@ -184,6 +184,7 @@ def test_malaria_rejects_what_is_not_an_image(client) -> None:
 
 @requires_model
 @requires_db
+@pytest.mark.usefixtures("admin_client")
 def test_risk_prediction_is_logged_and_reviewed(client, clean_table) -> None:
     body = client.post("/predict/diabetes", json=EXAMPLES["diabetes"]).json()
     prediction_id = body["prediction_id"]
@@ -202,5 +203,6 @@ def test_risk_prediction_is_logged_and_reviewed(client, clean_table) -> None:
 
 
 @requires_db
+@pytest.mark.usefixtures("admin_client")
 def test_review_of_an_unknown_risk_prediction_is_404(client, clean_table) -> None:
     assert client.post("/risk-predictions/999999/review", json={"had_condition": False}).status_code == 404

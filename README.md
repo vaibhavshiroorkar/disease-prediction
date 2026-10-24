@@ -1,43 +1,67 @@
 # Disease Prediction System
 
-Six models behind one FastAPI service. Tell it your symptoms and it ranks 41
-conditions that match, with a confidence for each. Give it clinical
-measurements (blood pressure, glucose, liver enzymes and so on) and it gives
-back a calibrated risk of heart disease, diabetes or liver disease, along with
-what the risk was based on and which numbers it had to guess.
+This project serves six machine learning models through one FastAPI service. You can
+send a list of symptoms and get a ranked list from 41 conditions. You can also
+submit clinical measurements for heart disease, diabetes and liver disease risk
+estimates. The responses include model scores, the inputs that affected the
+result, and any missing measurements the model filled in.
 
-Two of the models are about mosquito-borne disease. One takes a patient with
-confirmed dengue and estimates the chance it turns serious. It learned from
-654,045 real cases in Brazil's national register. The other looks at a picture
-of a single red blood cell and says whether a malaria parasite is inside it.
+The dengue model estimates severity among patients who already have confirmed
+dengue. It trains on a sample of Brazil's 2023 case records. The malaria model
+classifies images of individual red blood cells as parasitized or uninfected.
 
-The symptom model came first. It trains on a well-known Kaggle file, and it
-scores 100% on it, which tells you nothing. The other five are what I built
-once I wanted problems where the numbers mean something. They train on real
-patient records and real microscope images.
+The symptom model uses a small Kaggle dataset. Its perfect test scores say more
+about the dataset than its ability to handle real symptoms. The other models
+use patient records or microscope images, with separate tests for calibration,
+data leakage and performance across hospitals or years.
 
-Every prediction gets written to Postgres, so I can go back later and check it
-against what actually happened.
+The web interface covers all six models, with searchable symptoms, clinical
+forms and blood cell image uploads. It shows the results alongside model limits
+and missing inputs. FastAPI serves the interface and API from the same address.
+Postgres logging is optional; when enabled, it stores predictions for later review.
 
-## Running it
+## Run locally
+
+Use Python 3.12 or later. The trained models are included, so you can run the
+API without downloading data or retraining.
+
+On Windows, run these commands in PowerShell:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+python -m uvicorn app.main:app --reload
+```
+
+On macOS or Linux:
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate        # .venv\Scripts\activate on Windows
-pip install -r requirements-dev.txt
-
-python -m scripts.download_data
-python -m ml.train --model all
-uvicorn app.main:app --reload
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+python -m uvicorn app.main:app --reload
 ```
 
-Then open http://localhost:8000/docs.
+Then open http://localhost:8000 for the web interface. Interactive API docs are
+at `/docs`, and service information is at `/api`.
 
-The trained models are committed, so if you only want to run the API you can
-skip the two middle steps. The download is about 450 MB, nearly all of it the
-malaria images and two years of dengue cases. Training everything takes about
-20 minutes. Dengue alone is 12 of them, because its nested cross-validation
-runs over 160,000 rows.
+For hosting, see [docs/deployment.md](docs/deployment.md). The included Docker
+image runs the frontend and API together and reads the host's `PORT` setting.
+
+To download the source data and retrain all six models:
+
+```bash
+python -m scripts.download_data
+python -m ml.train --model all
+```
+
+The download is about 450 MB, mostly malaria images and two years of dengue
+records. Training time depends on your machine. Dengue takes much of that time
+because its nested cross-validation runs on 160,000 training rows.
+
+The following request examples use Bash-style quoting. On Windows, you can
+make the same requests through `/docs`.
 
 ```bash
 curl -X POST http://localhost:8000/predict/heart \
@@ -55,76 +79,92 @@ curl -X POST http://localhost:8000/predict/symptoms \
   -d '{"symptoms": ["itching", "skin_rash", "nodal_skin_eruptions"], "top_k": 3}'
 ```
 
-### Turning on the logging
+### Enable prediction logging
 
-It runs fine without a database, it just doesn't record anything. If you want
-the logging, point it at any Postgres:
+The API can make predictions without a database. To store them, start the local
+Postgres container and set `DATABASE_URL` in the same shell as the API.
+
+In PowerShell:
+
+```powershell
+docker compose up -d
+$env:DATABASE_URL = "postgresql://dps:devpass@localhost:5432/disease_predictions"
+python -m uvicorn app.main:app --reload
+```
+
+In Bash:
 
 ```bash
 docker compose up -d
 export DATABASE_URL=postgresql://dps:devpass@localhost:5432/disease_predictions
-uvicorn app.main:app --reload
+python -m uvicorn app.main:app --reload
 ```
 
-It creates its own tables on startup. If Postgres isn't there it prints a
-warning and carries on serving predictions, which is deliberate. Logging is for
-me, not for the person waiting on a response.
+The API creates its tables on startup. If it cannot connect to Postgres, it logs
+a warning and keeps serving predictions without recording them.
 
-## The models at a glance
+`docker-compose.yml` starts only the development database.
+`compose.production.yml` runs the application. History, review and statistics
+routes require an administrator key in the `X-API-Key` header. Set `ADMIN_API_KEY`
+on the server to enable them; they return 503 when no key is configured.
+
+## Model results
 
 | Model | Data | Size | Test AUC (95% CI) | At its threshold |
 |---|---|---|---|---|
-| heart | UCI Heart Disease, 4 hospitals | 918 patients | 0.866 (0.808 to 0.918) | catches 87% of cases, clears 68% of healthy |
-| diabetes | Pima Indians Diabetes | 768 patients | 0.815 (0.744 to 0.877) | catches 89% of cases, clears 60% of healthy |
-| liver | Indian Liver Patient Dataset | 570 patients | 0.817 (0.739 to 0.887) | catches 89% of cases, clears 33% of healthy |
-| dengue | Brazil's SINAN register, 2023 | 200,000 confirmed cases | 0.776 (0.760 to 0.792) | catches 90% of cases that turn serious, clears 35% of the rest |
-| malaria | NIH thin smear images | 27,558 cells, 200 patients | 0.991 (0.988 to 0.994) | catches 93% of infected cells, clears 98% of healthy ones |
-| symptom | Kaggle disease-symptom file | 304 unique rows | 1.000, and that's the problem | see below |
+| heart | UCI Heart Disease, 4 hospitals | 918 patients | 0.866 (0.808 to 0.918) | sensitivity 87%, specificity 68% |
+| diabetes | Pima Indians Diabetes | 768 patients | 0.815 (0.744 to 0.877) | sensitivity 89%, specificity 60% |
+| liver | Indian Liver Patient Dataset | 570 patients | 0.817 (0.739 to 0.887) | sensitivity 89%, specificity 33% |
+| dengue | Brazil's SINAN register, 2023 | 200,000 confirmed cases | 0.776 (0.760 to 0.792) | sensitivity 90%, specificity 35% |
+| malaria | NIH thin smear images | 27,558 cells, 200 patients | 0.9915 (0.9882 to 0.9942) | sensitivity 93%, specificity 98% |
 
-AUC is the chance that the model ranks a random sick patient above a random
-healthy one. 0.5 is a coin flip and 1.0 is perfect. The intervals for the first
-three are wide because each test set is only 114 to 184 patients. I'd rather
-show that than quote three decimals and pretend.
+AUC measures how well a model ranks positive cases above negative ones. A score
+of 0.5 is chance-level ranking; 1.0 means perfect separation on that test set.
+Sensitivity is the share of positive cases flagged. Specificity is the share of
+negative cases left unflagged. The first three models have wide confidence
+intervals because their test sets contain only 114 to 184 patients.
 
-## How the risk models are built
+The symptom model reaches 100% accuracy on 304 unique patterns. That is a
+multiclass accuracy score, so it is separate from the binary AUC results above.
+The [symptom model section](#the-symptom-model) explains why that score is misleading.
 
-Heart, diabetes, liver and dengue all go through the same steps. Malaria
-follows the same idea with images; its section says where it differs.
+## Training and evaluation
 
-1. Clean the file. Each dataset has its own problems (below), and the loader
-   logs every fix it makes, so training prints what it changed in the raw data.
-2. Set aside 20% as a test set and leave it alone until the end.
-3. Compare four kinds of model on the other 80% with nested cross-validation:
-   5 folds, repeated 3 times, with a small tuning search inside each fold. The
-   four are a dummy that guesses the average for everyone (the floor, always
-   0.5 AUC), logistic regression, a random forest, and gradient boosting.
-   Dengue skips the forest and runs the 5 folds once. At 160,000 rows the
-   forest would take hours, and one pass is already a stable estimate.
-4. Pick a winner. If logistic regression is within half a standard deviation
-   of the best, it wins. On this little data a gap that small could flip with a
-   different random seed, and I'd rather trust the simpler model.
-5. Calibrate it, so that "30% risk" means about 30 out of 100 such patients
-   actually have it.
-6. Choose a threshold: the highest cut-off that still catches 90% of real
-   cases, picked on cross-validated predictions from the training set.
-7. Score the test set once, with 1000 bootstrap resamples for the intervals.
+Heart, diabetes, liver and dengue share a training pipeline. Malaria uses a
+similar process with image features and patient-based splits.
 
-Missing values are filled in inside the model pipeline, never in the loader.
-That way each fold only ever sees medians computed from its own training rows.
+1. Clean the data and log the changes. Each loader handles the defects listed
+   in the dataset sections below.
+2. Set aside 20% for testing before choosing or tuning a model.
+3. Compare a prevalence-only baseline, logistic regression, random forest and
+   gradient boosting on the remaining 80%. The outer cross-validation uses
+   5 folds repeated 3 times, with a tuning search inside each fold. Dengue skips
+   the forest and uses one outer repeat to keep training time manageable.
+4. Choose the model family with the best mean AUC. Prefer logistic regression
+   if its score is within half the best model's standard deviation.
+5. Calibrate the probabilities. The aim is for a group assigned 30% risk to
+   have an observed positive rate near 30%. Calibration still needs checking
+   on the test set and on any new population.
+6. Pick the highest threshold that reaches 90% sensitivity on out-of-fold
+   training predictions. The test set does not choose the threshold.
+7. Evaluate on the test set, with 1,000 bootstrap resamples for confidence intervals.
 
-### Why a threshold, and why 90%
+The pipeline fills missing values using medians from its training rows. Each
+cross-validation fold fits its own imputer, so validation rows do not affect
+those medians.
 
-Same reasoning as the symptom model. Missing someone who has the disease is a
-worse mistake than flagging someone who doesn't, because a false alarm costs a
-follow-up test. So the threshold is set to catch 9 in 10 real cases, and the
-price shows up as false alarms. How big that price is depends a lot on the
-model, and the table above shows it plainly.
+### Thresholds and false alarms
 
-### What won: logistic regression on small data, boosting on big data
+The training target prioritizes sensitivity: flag 9 in 10 positive cases, then
+measure how many negative cases also get flagged. The 90% target is a project
+choice, not a clinically validated operating point. It also does not guarantee
+90% sensitivity on new data. The results above show the false-alarm tradeoff
+for each model.
 
-On the three small datasets I expected the forest or the boosting to win at
-least once. They didn't. The three real candidates finished within about one
-standard deviation of each other:
+### Comparing model families
+
+Logistic regression, random forest and gradient boosting finished within about
+one standard deviation of each other on the three smaller datasets:
 
 | | heart | diabetes | liver |
 |---|---|---|---|
@@ -133,14 +173,13 @@ standard deviation of each other:
 | gradient boosting | 0.877 +/- 0.022 | 0.832 +/- 0.028 | 0.701 +/- 0.046 |
 | dummy (floor) | 0.500 | 0.500 | 0.500 |
 
-Cross-validated AUC on the training split, mean +/- standard deviation over 15
-folds. On heart the forest is ahead by 0.0008, which is nothing, so the tie rule
-picks logistic regression. With 450 to 730 training rows and 8 to 10 inputs,
-there just isn't enough data for the fancier models to find anything the linear
-one misses. It's a common result on small tabular medical data, and it was
-good to see it happen rather than assume it.
+These are mean cross-validated AUCs, with standard deviations across 15 folds.
+On heart disease, the forest leads by 0.0008, so the selection rule chooses
+logistic regression. It also chooses logistic regression for diabetes and liver
+disease. These training splits contain roughly 450 to 730 rows and 8 to 10 inputs;
+the more complex models did not produce a clear gain.
 
-Then the data got bigger, and the result flipped:
+Gradient boosting performed better on dengue and malaria:
 
 | | dengue | malaria |
 |---|---|---|
@@ -148,54 +187,50 @@ Then the data got bigger, and the result flipped:
 | logistic regression | 0.740 +/- 0.007 | 0.970 +/- 0.008 |
 | dummy (floor) | 0.500 | 0.500 |
 
-With 160,000 dengue cases the gap is 0.024, about five standard deviations.
-That's no coin flip. Given enough rows, boosting finds patterns across the
-inputs that a single straight line can't. On 500 rows those patterns are
-mostly noise. On 160,000 some of them are real.
+On dengue, boosting leads logistic regression by 0.024 AUC, compared with a
+fold-to-fold standard deviation of about 0.005. The larger gap supports choosing
+boosting for this dataset. It does not establish that boosting will always win
+on larger datasets.
 
-### An improvement that held up: logging the lab values
+### Log-transforming lab values
 
-Liver enzymes are wildly skewed. Most patients have an ALT around 35, and a few
-have 2000. A linear model treats that 2000 as a huge lever. Taking the log first
-pulls those values back in line:
+Liver enzyme measurements are skewed. An ALT value of 2,000 can have much more
+influence on a linear model than a typical value around 35. A log transform
+reduces that difference:
 
 | | liver | diabetes |
 |---|---|---|
 | logistic, raw values | 0.716 | 0.834 |
 | logistic, skewed values logged | **0.729** | **0.837** |
 
-That's a gain of 0.013 on liver and next to nothing on diabetes, which only has
-two skewed inputs (insulin and the family-history score). It's small, but it's
-the difference between logistic regression trailing the forest on liver and
-leading it. Every training run keeps the raw version in the comparison table as
-a reference row, so if this stops paying off, it'll be obvious.
+The transform adds about 0.013 AUC on liver and 0.003 on diabetes, where it
+applies to insulin and the family-history score. On liver, that moves logistic
+regression from below the forest to above it. Training keeps an untransformed
+version in the comparison table so the effect stays visible.
 
 ## Heart disease
 
-918 patients from four sources: the Cleveland Clinic, the Hungarian Institute of
-Cardiology in Budapest, the university hospitals of Zurich and Basel (pooled as
-one Swiss file), and the Long Beach VA. The question is whether an angiogram
-found a major vessel more than 50% narrowed.
+The heart model uses records from 918 patients at four sources: the Cleveland
+Clinic, the Hungarian Institute of Cardiology, the Zurich and Basel university
+hospitals (pooled as one Swiss source), and the Long Beach VA. The target is
+whether an angiogram found more than 50% narrowing in a major vessel.
 
 ![heart curves](docs/figures/heart_curves.png)
 
-On the test set it catches 89 of 102 patients with disease and misses 13. It
-also flags 26 of the 82 without it. Calibration is good: the expected
-calibration error is 0.04, so when it says 70%, about 70% of those people really
-do have it. The input that matters most by far is the type of chest pain.
-Exercise-induced ST depression and angina come next.
+On the test set, it flags 89 of 102 patients with disease and misses 13. It also
+flags 26 of the 82 without disease. Its expected calibration error is 0.04,
+measured across probability bins. That average does not guarantee an accurate
+probability for an individual patient. Chest pain type has the strongest
+effect, followed by exercise-induced ST depression and angina.
 
-The raw files needed some fixing. Every Swiss patient has a cholesterol of 0,
-and so do 49 at the VA. That means "not measured", not "no cholesterol". Three
-columns (`slope`, `ca`, `thal`) are nearly complete at Cleveland and 50 to 99%
-missing everywhere else. I dropped them, because the model can't use those
-columns without also learning which hospital a patient came from. Cholesterol
-has the same problem in a milder form, so it stays, but without a "was missing"
-flag.
+Every Swiss record and 49 VA records list cholesterol as 0. The loader treats
+those values as missing. The `slope`, `ca` and `thal` columns are nearly complete
+at Cleveland but 50 to 99% missing elsewhere. They are excluded because their
+missingness can identify the hospital. Cholesterol stays, but without a
+missing-value indicator, for the same reason.
 
-The test I care about most is training on three hospitals and testing on the
-fourth. That's the closest this data gets to "what happens at a hospital it has
-never seen":
+A separate evaluation trains on three sources and tests on the fourth. This
+checks how well the model transfers to a hospital outside its training data:
 
 | Left-out hospital | Patients | Real rate | Predicted on average | AUC |
 |---|---|---|---|---|
@@ -204,84 +239,77 @@ never seen":
 | Switzerland | 123 | 94% | 63% | 0.73 |
 | VA | 199 | 74% | 72% | 0.75 |
 
-At Cleveland and Hungary it ranks patients as well as it does on its own test
-set. At Switzerland and the VA the AUC drops to the mid 0.7s. At Switzerland
-the average prediction is also off by 30 points: 94% of the Swiss patients had
-disease, and no model trained on the other three hospitals expects that. So the
-ranking gets worse but survives, while the probabilities don't travel at all.
-Before using this anywhere new you'd want to recalibrate it on local patients.
+Ranking stays close to the original test score at Cleveland and Hungary. AUC
+drops to 0.73 at Switzerland and 0.75 at the VA. For Switzerland, the average
+predicted risk is 63%, while the observed rate is 94%. The model's probabilities
+transfer poorly even where it retains some ranking ability. A new site would
+need its own validation and calibration.
 
 ## Diabetes
 
-768 women of Pima heritage, aged 21 and over. The question is whether they were
-diagnosed with diabetes within five years.
+The diabetes model uses records from 768 women of Pima heritage, aged 21 and
+over. Its target is the dataset's diabetes outcome.
 
 ![diabetes curves](docs/figures/diabetes_curves.png)
 
-It catches 48 of the 54 who developed diabetes and clears 60 of the 100 who
-didn't. Glucose does most of the work. Its importance is five times that of the
-next input (BMI). The threshold sits low, at 0.21. That's what catching 90% of
-cases costs when only a third of the women have the condition. So a flag here
-means "test properly", not "probably diabetic": only 55% of flagged women had
-it. On the other hand, 91% of the women it cleared really were fine.
+It flags 48 of the 54 positive cases and leaves 60 of the 100 negative cases
+unflagged. Glucose is the strongest input, with about five times the importance
+of BMI, the next input. The threshold is about 0.21. Only 55% of flagged cases
+are positive, while 91% of unflagged cases are negative. The flag reflects the
+chosen sensitivity target; it is not a diagnosis.
 
-The file uses 0 for "not measured" in five columns where 0 is impossible.
-Insulin is "0" for 374 of the 768 women and skin thickness for 227. Leave those
-in, and the model learns that an insulin of zero is normal and common.
+Five measurement columns use 0 for missing data. Insulin is 0 in 374 records,
+and skin thickness is 0 in 227. The loader replaces these values with missing
+values before the pipeline fits its imputer.
 
-I wouldn't trust it outside that group. It has only ever seen Pima women. It has
-no idea what to do with a man, and the API will happily score one, because
-nothing in the inputs says sex.
+The training data covers only Pima women. The API has no sex field for this
+model and does not enforce that population limit. It will return a score for
+inputs from other groups, despite having no validation for them.
 
 ## Liver disease
 
-570 patients from Andhra Pradesh, some recorded as liver patients and some not.
-The question is which group a patient belongs to.
+The liver model uses 570 patient records from Andhra Pradesh. It predicts the
+dataset's label: liver patient or non-patient.
 
 ![liver curves](docs/figures/liver_curves.png)
 
-This is the weak one. Cross-validated AUC is 0.73. The test set came out at
-0.82, which is better than it deserves. With 114 patients a lucky split can do
-that, and the interval (0.74 to 0.89) is wide enough to cover both. I'd trust
-the cross-validated number.
+This is the weakest of the three smaller clinical models. Its cross-validated
+AUC is 0.73, compared with 0.82 on the 114-patient test set. The test interval
+runs from 0.74 to 0.89. That uncertainty makes the higher test score a poor
+basis for claiming a large improvement over cross-validation.
 
-The cost of the threshold is steep here. To catch 89% of patients, it also flags
-22 of the 33 non-patients. Its precision-recall score of 0.93 looks impressive
-until you notice that 71% of this dataset are patients, so a model that guessed
-at random would score 0.71. Calibration is the loosest of the three (error
-0.10).
+At its threshold, it flags 89% of positive cases but also 22 of the 33 negative
+cases. The precision-recall score is 0.93, against a prevalence baseline of
+about 0.71. Expected calibration error is 0.10, the highest of the three smaller
+clinical models.
 
-Most published results on this dataset land in the same range, so I don't think
-there's much left to find with these ten numbers.
+These ten measurements give limited separation, particularly at a threshold
+that prioritizes sensitivity. The false-positive rate remains a limitation.
 
-The file had 13 exact duplicate rows, which I drop before the split for the
-same reason as the symptom data. The label is coded 1 for patient and 2 for
-not, which I map to 1 and 0.
+The loader removes 13 exact duplicate rows before splitting. It also maps the
+original labels, 1 for patient and 2 for non-patient, to 1 and 0.
 
 ## Dengue
 
-I wanted a model that says whether someone has dengue. The best public data I
-found doesn't allow that. Brazil publishes every dengue notification in the
-country, about 1.6 million a year. But the public release only keeps the
-confirmed and inconclusive cases. Everyone who tested negative is taken out
-first. You can't learn what "not dengue" looks like from a file with no
-negatives in it.
+The dengue model predicts severity rather than diagnosis. The public SINAN
+files used here contain about 1.6 million notifications per year, but omit
+cases that tested negative. They cannot support a model that distinguishes
+dengue from other causes of similar symptoms.
 
-So the model answers the next question a clinic faces. Most dengue gets better
-on its own. A few percent of cases develop warning signs (bleeding, vomiting
-that won't stop, belly pain, a falling platelet count) or turn severe, and
-those patients need watching. Among patients with lab-confirmed dengue, which
-ones will that be?
+Among lab-confirmed cases, the target is a recorded outcome of dengue with
+warning signs or severe dengue. These labels can include outcomes such as
+bleeding, persistent vomiting, abdominal pain and a falling platelet count.
+They describe severity after confirmation, not evidence that someone has dengue.
 
-The inputs are what the notification form records at the first visit: age,
-sex, pregnancy, days since the symptoms began, 14 signs (fever, rash,
-petechiae, the tourniquet test and so on) and 7 chronic conditions. Anything
-recorded later stays out: the warning-sign boxes themselves, hospitalization,
-death and every lab result. Those are the answer, or they come after it.
+Inputs come from the initial notification form: age, sex, pregnancy, days since
+symptom onset, 14 signs and 7 chronic conditions. The signs include fever, rash,
+petechiae and the tourniquet test. The loader excludes outcome fields, including
+the warning-sign labels, hospitalization and death, along with lab-result
+fields that could leak later information.
 
-2023 trains it: 654,045 lab-confirmed cases, 2.4% of which got worse. I sample
-200,000 of them, stratified on the outcome. 2025 is kept back as a second test
-from a different epidemic.
+The 2023 file contains 654,045 lab-confirmed cases. Training uses a stratified
+sample of 200,000, with 2.4% positive outcomes. A separate sample from 2025 tests
+the model on another year's records.
 
 ![dengue curves](docs/figures/dengue_curves.png)
 
@@ -290,26 +318,24 @@ from a different epidemic.
 | held-out 2023 cases | 40,000 | 0.776 (0.760 to 0.792) |
 | 2025, a different year | 100,000 | 0.733 |
 
-The inputs that matter most are leukopenia (a low white cell count) by a long
-way, then days since onset, then vomiting and age. For a 34-year-old woman on
-day 3 with fever, headache and muscle aches, it says 0.9%. Add petechiae, a
-positive tourniquet test and leukopenia, and it says 11%.
+The strongest input is the form's leukopenia indicator, followed by days since
+onset, vomiting and age. For example, a 34-year-old woman on day 3 with fever,
+headache and muscle aches receives a score around 0.9%. Adding petechiae, a
+positive tourniquet test and leukopenia raises that example to about 11%.
 
-The threshold is the humbling part. When only 2.4% of patients get worse,
-catching 90% of them means flagging almost two thirds of everyone. Only 3.3% of
-the flagged patients actually deteriorate. Read the other way round it's more
-useful: it clears about a third of patients, and 99.3% of those stay fine.
-So this is a rule-out tool. It
-can say who is probably safe to send home with instructions. It can't say who
-will get sick.
+The low positive rate makes the threshold difficult to use. Reaching 90%
+sensitivity flags almost two thirds of the test set. Only 3.3% of flagged cases
+have the positive outcome. Among the roughly one third left unflagged, 99.3%
+have a negative outcome. Those figures describe this test set. They do not
+establish that the model can safely rule out deterioration or guide discharge.
 
-2025 cost it on both counts. The AUC fell from 0.776 to 0.733. And 3.9% of the
-2025 cases got worse, while the model predicted 2.6% on average. Either the
-2025 season was different or it was classified differently, and a model
-trained on 2023 can't know which. It's the same lesson as the Swiss heart
-patients: ranking survives a move better than probabilities do.
+On the 2025 sample, AUC falls from 0.776 to 0.733. The observed positive rate
+is 3.9%, while the mean predicted risk is 2.6%. The data does not establish
+whether that change comes from the epidemic, reporting practices or both.
+As with the heart model's hospital tests, useful ranking does not ensure
+accurate probabilities in a different population.
 
-Each of Brazil's five regions also takes a turn as the test set:
+A separate evaluation leaves out each of Brazil's five regions in turn:
 
 | Left-out region | Cases | Real rate | Predicted on average | AUC |
 |---|---|---|---|---|
@@ -319,98 +345,89 @@ Each of Brazil's five regions also takes a turn as the test set:
 | South | 46,839 | 3.4% | 1.9% | 0.74 |
 | Southeast | 113,179 | 1.9% | 3.1% | 0.76 |
 
-The ranking holds up everywhere. The rates don't. The Northeast and South
-label more of their cases as serious than the model expects, and the other
-three label fewer. That's why the region is never an input. A model that learned
-"Northeast" would be learning a reporting habit, not a patient. To keep this
-check from taking hours, it reuses the settings the main search picked instead of
-searching again for each region.
+Regional AUC ranges from 0.74 to 0.84, but the predicted and observed rates
+differ. The model underestimates the Northeast and South and overestimates the
+other regions. Region is excluded as an input to reduce reliance on location
+and possible reporting differences. These tests reuse the main search's chosen
+settings rather than repeating the tuning search for each region.
 
 ## Malaria
 
-There's no good public table of malaria patients with symptoms and a test
-result. What does exist, and is very good, is images. The NIH released 27,558
-pictures of single red blood cells from Giemsa-stained thin smears. They came
-from 200 patients at Chittagong Medical College Hospital in Bangladesh, and
-half the cells carry the parasite. Reading smears under a microscope is still
-how most malaria gets confirmed. Counting infected cells is slow, tiring work,
-which is why people want to automate it.
+The malaria model uses the NIH dataset of 27,558 single-cell images from
+Giemsa-stained thin smears. The images come from 200 patients at Chittagong
+Medical College Hospital in Bangladesh. Half the cells are labelled parasitized.
+This task classifies an already cropped cell; it does not read a whole slide.
 
-I kept to scikit-learn, so there's no neural network. Each cell becomes 181
-numbers that I designed: colour statistics, a hue histogram, a small
-histogram of edge directions for shape, and above all how much of the cell is
-far darker than the rest of it. The parasite soaks up the purple stain, so
-that last group does most of the work.
+The model uses scikit-learn rather than a neural network. The feature extractor
+turns each cell into 181 measurements: colour statistics, hue and saturation
+histograms, edge directions and dark-pixel features. The dark-pixel features
+capture contrast between stained regions and the rest of the cell.
 
-Every split here is by patient: the test set, the cross-validation, the
-calibration, the threshold. Cells from one patient share a slide, a stain batch
-and the lighting. Split by cell and the model can score well by recognising
-the slide. Training measures the difference. Cell by cell the AUC is 0.9927,
-patient by patient 0.9894. That gap is small with features this simple, but
-it always points the same way, and a random split by cell is the easy
-default.
+The test split, cross-validation, calibration and threshold selection all keep
+patients separate. Cells from one patient can share staining and lighting, so a
+random cell split can reward recognition of slide conditions. A comparison
+gets 0.9927 AUC with random cell splits and 0.9894 with patient splits. The gap
+is small here, but the patient split is the more relevant evaluation.
 
 ![malaria curves](docs/figures/malaria_curves.png)
 
-On 40 patients it never saw (5,555 cells), the AUC is 0.991 (0.988 to 0.994).
-The intervals come from resampling patients, not cells. 2,000 cells from 40
-people tell you much less than 2,000 people would. The threshold catches 92.5%
-of infected cells and wrongly flags 1.6% of healthy ones.
+On 40 held-out patients (5,555 cells), AUC is 0.9915, with a 95% interval of
+0.9882 to 0.9942. Bootstrap resampling uses patients rather than individual
+cells, since cells from the same person are related observations. The threshold
+flags 92.5% of parasitized cells and 1.6% of uninfected cells.
 
-Per patient, which is closer to how a slide is read:
-- On the 11 healthy patients, a median of 1.4% of their cells got flagged. The
-  worst was 4.5%.
-- On the 29 infected patients, a median of 92% of their infected cells got
-  caught. The worst patient had only a third caught.
+The patient-level breakdown shows variation hidden by the pooled score:
 
-That 1.4% matters more than it looks. The test set is half infected cells. A
-real slide is not: often fewer than 1 cell in 100 carries a parasite. At that
-rate the 1.6% false alarm rate means most flagged cells would be healthy. A
-slide reader built on this would need to look at how many cells get flagged,
-compared with what a healthy slide produces, not at any single cell.
+- For the 11 patients with no labelled parasitized cells, the median flagged
+  fraction was 1.4%. The worst was 4.5%.
+- For the 29 patients with labelled parasitized cells, median sensitivity was
+  92%. For the worst patient, it was about one third.
+
+The test set is roughly half parasitized cells. If only 1% of cells on another
+slide were parasitized, the same sensitivity and false-positive rate would make
+most flagged cells false positives. A slide-level system would need a separate
+evaluation of cell counts and slide-level decisions. Cell accuracy alone does
+not answer that question.
 
 ![malaria examples](docs/figures/malaria_examples.png)
 
-This figure was the most interesting thing to come out of it. The middle row is
-the model's worst misses: cells the dataset calls parasitized. I can't see a
-parasite in any of them. Several of the "false alarms" in the bottom row have a
-purple dot that looks just like the ones in the top row. I'm not a
-microscopist, so I won't claim these are labelling mistakes. But the model's
-worst errors and the dataset's doubtful labels overlap a lot. Some of the gap
-between 0.99 and 1.0 is probably the labels, not the model.
+The example figure includes the highest-confidence misses in the middle row
+and false positives in the bottom row. Some misses have no obvious dark spot;
+some false positives do. Appearance alone cannot establish a labelling error.
+These cases would need review by a qualified microscopist before drawing
+conclusions about label quality.
 
-What it won't do: it reads one cell, cropped and centred like the NIH images.
-It can't take a whole microscope field, which would need a step that finds the
-cells first. It has only seen P. falciparum from one hospital, and it doesn't
-tell species apart.
+Inputs must be single cells, cropped and centred like the NIH examples. A whole
+microscope field needs cell detection before classification. The training data
+covers P. falciparum from one hospital, and the model does not distinguish species.
 
 ## The symptom model
 
-This is where the project started. It's a Random Forest over 131 yes/no
-symptoms, tuned on macro recall.
+The symptom model uses logistic regression over 131 yes/no symptom inputs. Its
+fixed settings match the baseline that performed better on noisy held-out
+patterns. Training also evaluates a reference forest and Naive Bayes.
 
-### The 100% accuracy trap
+### Why 100% accuracy is misleading
 
-Nearly every writeup of this dataset reports 100% accuracy. It took me a while
-to work out why, and it isn't because the models are good.
+The clean evaluation reaches 100% accuracy, but the dataset makes this task
+unusually easy. Duplicate rows are part of the problem.
 
-The file has 4920 rows, but only **304 of them are actually different**. Each
-disease has between 5 and 10 real symptom patterns, and those get repeated until
-every class has exactly 120 rows. So if you do a normal random split, the same
-row ends up in both train and test, and you're scoring the model on data it has
-literally memorised.
+The training file has 4,920 rows but only 304 distinct symptom patterns. Each
+condition has 5 to 10 patterns, repeated until every class has 120 rows. A
+random split before deduplication can put identical patterns in both training
+and test sets, making memorization look like generalization.
 
-`unique_symptom_patterns()` strips it down to those 304 distinct rows before
-anything gets split. Even after that, the model scores 1.000 on every clean
-measure. Each disease has a distinctive set of symptoms, so the task is just
-easy. A perfect score here means the dataset separates cleanly. It does not mean
-this would survive real patients describing their own symptoms.
+`unique_symptom_patterns()` removes duplicates before splitting. Even then,
+the model reaches 1.000 accuracy on the clean evaluations. The remaining
+patterns still separate neatly by condition. They do not test how the model
+handles people describing symptoms in their own words.
 
-### Making it hard on purpose
+### Testing incomplete and noisy symptoms
 
-So the test that matters is the noisy one. I take a held-out pattern, drop a few
-of its symptoms and add a few unrelated ones, which is what real people do. Then
-I compare the forest with two simpler models:
+The noise test drops symptoms from held-out patterns and adds unrelated ones.
+It compares the forest with logistic regression and Naive Bayes. This gives a
+harder test than the clean data, though the simulated noise is still no
+substitute for real patient descriptions.
 
 | Symptoms dropped and added | Forest | Logistic regression | Naive Bayes |
 |---|---|---|---|
@@ -420,76 +437,79 @@ I compare the forest with two simpler models:
 | 3 and 3 | 0.752 | **0.845** | 0.793 |
 | 3 and 3, right answer in top 3 | 0.921 | **0.976** | 0.941 |
 
-Accuracy on held-out patterns, out of 5 folds and 5 rounds of noise each.
+These are accuracies on held-out patterns, using 5 folds and 5 noise trials per fold.
 
-Two things came out of this.
+The older noise test perturbs training patterns after fitting. That is easier
+than perturbing unseen patterns. For the served logistic model, it reports
+about 0.95 accuracy with two symptoms dropped and two added. The held-out
+evaluation gives 0.92. Both results remain in the summary, with the held-out
+results under `comparison`.
 
-First, my original noise test was too kind. It perturbed the same patterns the
-forest had trained on, and it reported 0.94 at "2 and 2". On patterns the forest
-had never seen, the same test gives 0.86.
+Logistic regression beats the forest at every nonzero noise level. With three
+symptoms dropped and three added, it keeps the correct condition in the top
+three 97.6% of the time, compared with 92.1% for the forest. The API now serves
+logistic regression. The artifact stores normalized mean absolute coefficients
+for global feature rankings. Per-prediction explanations still use the
+dataset's symptom matches.
 
-Second, logistic regression beats the forest at every noise level. It degrades
-more slowly, and it keeps the right answer in the top 3 almost every time, even
-with three real symptoms missing and three wrong ones added. The API still
-serves the forest for now. Swapping it means reworking the artifact and the
-explanation code, which currently lean on the forest's feature importances.
+### Choosing the search metric
 
-### Why recall and not accuracy
+The reference forest's grid search uses macro recall, giving each of the 41 classes equal weight.
+This keeps performance on one condition from disappearing inside an average
+dominated by more common classes. Top-three accuracy is reported separately
+because the API returns a ranked list.
 
-The grid search scores candidates on macro recall. If the model misses a
-condition, that condition isn't in the list at all and you never see it. If it
-adds a wrong one, you read an extra line and move on. Macro recall weights all
-41 classes equally, so the search can't give up recall on a rare disease to gain
-a fraction of a point on the common ones.
-
-Did it help? Honestly, no. 16 of the 32 candidates tied, and even the worst
-scored 0.983. The training output prints the tie count, so I don't fool myself
-into treating the "best" settings as a real finding.
+The forest search does not identify a clear winner on this dataset: 16 of 32 candidates
+tie, and the worst scores 0.983. Training reports the tie count alongside the
+chosen settings so the nominal winner is not mistaken for a meaningful gain.
 
 ### Misspellings
 
-If you misspell something it doesn't throw the request away. It predicts on
-whatever it recognised and hands back the names it didn't, with close matches:
-send `hedache` and it'll suggest `headache`. `Skin Rash`, `skin rash` and
-`skin_rash` all land on the same key.
+The API normalizes symptom names, so `Skin Rash`, `skin rash` and `skin_rash`
+map to the same key. It predicts using recognized symptoms and returns
+suggestions for unknown names: `hedache`, for example, suggests `headache`.
+If none of the supplied symptoms are recognized, it returns a 422 response
+with suggestions instead of a prediction.
 
-## Looking at what it got wrong
+## Reviewing predictions
 
-Every prediction is stored. For the symptom model, I can record what the
-condition really was:
+With database logging and administrator access enabled, you can attach a review to a stored prediction.
+For symptoms, record whether the result was correct and, if known, the actual condition:
 
 ```bash
 curl -X POST http://localhost:8000/predictions/42/review \
+  -H "X-API-Key: $ADMIN_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"was_correct": false, "actual_disease": "Acne"}'
 ```
 
-Then `python -m ml.train --with-feedback` pulls those corrections in as extra
-training rows. They're worth more than ordinary rows because they're cases the
-model already got wrong. If I mark something wrong but don't know the right
-answer, it's counted but not trained on. Making up a label to fill the gap would
-just add noise.
+Running `python -m ml.train --with-feedback` adds corrected symptom predictions
+to the training data. These rows do not receive extra weight. A result marked
+wrong without an `actual_disease` counts in the review statistics but cannot
+become a training example because it has no corrected label.
 
-For the risk models, the review is simpler: did the patient turn out to have it
-or not.
+For the binary models, record whether the positive outcome occurred:
 
 ```bash
 curl -X POST http://localhost:8000/risk-predictions/7/review \
+  -H "X-API-Key: $ADMIN_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"had_condition": true}'
 ```
 
-`/risk-predictions/stats` then compares the average predicted risk with how
-often people really had the condition, for each model. That's the cheapest live
-calibration check I know of. If the two drift apart, the people using it don't
-look like the training data. The risk models don't retrain on these outcomes
-yet. They're recorded so I can see when that's needed.
+`/risk-predictions/stats` compares predicted probabilities with recorded
+outcomes for each model. A gap can point to calibration drift, though the
+reviewed cases may not represent all requests. The risk models do not retrain
+on these outcomes; the records support later evaluation.
 
 ## Endpoints
 
 | Method | Path | What it does |
 |---|---|---|
-| GET | `/health` | Are the models loaded, is logging on |
+| GET | `/` | Web interface |
+| GET | `/api` | Service description and endpoint list |
+| GET | `/health` | Model load status and database logging status |
+| GET | `/ready` | Returns 503 if any model is unavailable |
 | GET | `/models` | Every model with its headline scores |
 | GET | `/models/{name}` | One model's inputs, ranges, full scores and data source |
 | POST | `/predict/heart` | Heart disease risk |
@@ -502,27 +522,33 @@ yet. They're recorded so I can see when that's needed.
 | GET | `/diseases` | The 41 conditions the symptom model knows |
 | GET | `/diseases/{name}/symptoms` | Symptoms recorded for one condition |
 | GET | `/predictions` | Recent symptom predictions |
-| GET | `/predictions/wrong` | Symptom predictions I've marked wrong |
-| GET | `/predictions/stats` | Counts, and how often it's actually right |
-| POST | `/predictions/{id}/review` | Tell it what the answer should have been |
+| GET | `/predictions/wrong` | Symptom predictions marked wrong |
+| GET | `/predictions/stats` | Counts and accuracy among reviewed symptom predictions |
+| POST | `/predictions/{id}/review` | Record a symptom prediction review |
 | GET | `/risk-predictions` | Recent risk predictions |
 | GET | `/risk-predictions/stats` | Live calibration and threshold performance per model |
 | POST | `/risk-predictions/{id}/review` | Record whether the patient had the condition |
 
-Request and response shapes are in [docs/api.md](docs/api.md). A few behaviours
-worth knowing:
+See [docs/api.md](docs/api.md) for request and response fields.
 
-- Optional measurements you leave out get filled with the training median, and
-  the response tells you which ones it filled.
-- A field it doesn't know is an error. Send `cholesterol` instead of `chol` and
-  you get a 422, not a risk with your cholesterol quietly ignored.
-- Each risk comes with the three inputs that moved it most. For each one, the
-  patient is rescored with that value swapped for a typical one.
+All `/predictions` and `/risk-predictions` routes require `X-API-Key`. Public
+prediction requests need no key. Prediction and administrator routes share a
+per-client rate limit of 60 requests per minute by default.
 
-## Layout
+- The tabular models fill omitted optional measurements with training medians.
+  Each response lists the fields it filled.
+- The tabular request schemas reject unknown fields. Sending `cholesterol`
+  instead of `chol` returns a 422 response.
+- Tabular risk responses include up to three influential supplied inputs. The
+  explanation replaces each input with a typical value and measures the change
+  in the score. These are model effects, not evidence of medical causation.
+
+## Repository layout
 
 ```
 app/     the API. reads models/, never imports ml/
+  static/         frontend HTML, CSS and JavaScript
+  security.py     administrator keys, request limits and privacy headers
   cells.py        turns a blood cell image into the 181 numbers the malaria model reads
   db.py           postgres logging, review queues, feedback for retraining
   registry.py     loading the artifacts and refusing to load a bad one
@@ -531,73 +557,84 @@ ml/      training
   datasets.py       symptom data loading and cleaning
   clinical_data.py  heart, diabetes, liver and dengue loading, cleaning and input specs
   malaria.py        malaria images, patient-grouped training, the example figure
-  model.py          the symptom forest, the recall search, the baselines
+  model.py          the served symptom model and reference classifiers
   clinical_model.py the four candidate families and the selection rule
   evaluate.py       symptom scoring and the noise tests
   clinical_eval.py  risk scores, bootstrap intervals, threshold, calibration
   train.py          run this to produce everything in models/
 models/  the trained artifacts and a <name>_summary.json for each
 docs/figures/  ROC, precision-recall and calibration plots, redrawn by training
-tests/   154 of them
+tests/   API, data cleaning, model evaluation and database tests
 ```
 
-The API never imports the training code. They meet at the joblib files, which
-carry an `artifact_version` the API checks before trusting them. Training
-reaches into the API package twice. `ml.train --with-feedback` imports
-`app.db` to fetch corrections, inside the function, so training still works
-with no database around. And the malaria training imports `app/cells.py`, so
-the images are turned into numbers by exactly the same code in training and
-in serving. The malaria artifact records the extractor's version, and the API
-refuses to score with a mismatched one.
+The API loads joblib artifacts without importing the training package. It checks
+their `artifact_version` before using them. Symptom retraining imports `app.db`
+inside the feedback loader, so ordinary training does not need a database.
+Malaria training imports `app.cells` to share the serving feature extractor.
+The malaria route rejects artifacts whose feature version does not match the code.
 
-The request schemas for the risk models are written out by hand, so `/docs`
-reads well. A test checks that their fields and ranges still match what the
-artifacts say.
+The tabular request schemas are written by hand for readable API docs. A test
+checks that their fields and ranges match the artifacts.
 
 ## Tests
 
 ```bash
-pytest
-TEST_DATABASE_URL=postgresql://dps:devpass@localhost:5432/disease_predictions pytest
+python -m pip install -r requirements-dev.txt
+python -m pytest
 ```
 
-Without the env var the 20 database tests skip and 134 run. With it, all 154
-run.
+Create a separate, disposable Postgres database for the database tests. Their
+fixtures truncate both prediction tables. Set `TEST_DATABASE_URL` to that
+database before running the suite.
 
-The database tests hit a real Postgres rather than a mock. Mocking felt
-pointless here, because the things most likely to break are the `text[]` round
-trip, the `jsonb` columns and the partial indexes, and a mock would happily
-pretend all three work.
+In PowerShell:
 
-The data tests don't need the downloaded files. Each one writes a few rows that
-reproduce a specific defect (a zero cholesterol, a duplicate row, a label coded
-2) and checks that the loader fixes it.
+```powershell
+$env:TEST_DATABASE_URL = "postgresql://dps:devpass@localhost:5432/disease_predictions_test"
+python -m pytest
+```
 
-## One thing that will bite you
+In Bash:
 
-scikit-learn is pinned to an exact version in requirements.txt, not a range.
+```bash
+TEST_DATABASE_URL=postgresql://dps:devpass@localhost:5432/disease_predictions_test python -m pytest
+```
 
-The models are pickles, and scikit-learn shuffles its internal modules between
-minor releases. An artifact trained on 1.8 and loaded on 1.9 blows up with
-`No module named '_loss'`, which is not a helpful thing to read at 1am. I spent
-a while on that one. If you bump the version you have to retrain and commit the
-new artifacts in the same change. The API will at least tell you that's what
-happened instead of passing the raw ImportError through.
+Without that variable, database tests skip. Browser tests are opt-in through
+`RUN_BROWSER_TESTS=1` and require Playwright's Chromium installation. See the
+[deployment guide](docs/deployment.md#checks-before-changes-ship) for those commands.
+
+The database tests use real Postgres to check `text[]` round trips, `jsonb`
+columns and partial indexes. Those behaviours depend on the database and would
+not be covered by mocking its responses.
+
+Data-cleaning tests create small fixtures rather than downloading datasets.
+They check defects such as zero cholesterol values, duplicate rows and the
+liver dataset's label encoding.
+
+## Model compatibility
+
+`requirements.txt` pins scikit-learn and joblib to the versions used by the
+committed artifacts.
+
+The joblib files contain pickled scikit-learn objects. Internal module changes
+between versions can stop an artifact from loading, sometimes with errors such
+as `No module named '_loss'`. If you change the scikit-learn version, retrain
+and commit the matching artifacts in the same change. The API reports loading
+failures as 503 responses with a retraining hint.
 
 ## Data
 
-Eleven files, fetched by `scripts/download_data.py`, not checked into the
-repo. Every one of them arrives with problems: a phantom column, zeros that
-mean "missing", duplicate rows, labels coded 1 and 2, ages packed into a code,
-patient ids spelled four ways. What they are and how they're
-handled is in [data/README.md](data/README.md).
+`scripts/download_data.py` fetches eleven source files. Raw data stays outside
+Git. The loaders handle empty columns, missing measurements encoded as zero,
+duplicate rows, inconsistent labels, packed age codes and patient identifiers.
+See [data/README.md](data/README.md) for sources and cleaning rules.
 
 ## Disclaimer
 
-This is a learning project trained on small public datasets. It is not a medical
-device and you should not make decisions with it. The heart data is from the
-1980s, the diabetes data covers one population of women, and the liver data
-comes from one region of India. The dengue model only knows Brazil, and only
-patients already confirmed to have dengue. The malaria model reads one cell at
-a time from one hospital's slides. The disclaimer is in every API response too, so
-it travels with the prediction.
+This is an educational project trained on public datasets. It is not a validated
+medical device and should not guide diagnosis or treatment. The heart data is
+from the 1980s. The diabetes data covers one population of women, and the liver
+data comes from one region of India. The dengue model covers confirmed cases
+in Brazil. The malaria model classifies individual cells from one hospital's
+slides. Every prediction response includes an educational-use disclaimer.

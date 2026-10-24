@@ -16,7 +16,7 @@ import os
 import pytest
 from fastapi.testclient import TestClient
 
-from app import db
+from app import config, db
 from app.main import app
 from app.registry import MODEL_NAMES, registry
 
@@ -73,3 +73,18 @@ def symptom_keys(client) -> list[str]:
     if response.status_code != 200:
         pytest.skip("symptom model unavailable")
     return [entry["key"] for entry in response.json()["symptoms"]]
+
+
+@pytest.fixture(autouse=True)
+def request_budget(monkeypatch):
+    from app.security import SlidingWindow
+
+    monkeypatch.setattr(app.state, "prediction_limiter", SlidingWindow(limit=600))
+
+
+@pytest.fixture()
+def admin_client(client, monkeypatch):
+    monkeypatch.setattr(config, "ADMIN_API_KEY", "integration-test-admin-key")
+    client.headers["X-API-Key"] = "integration-test-admin-key"
+    yield client
+    client.headers.pop("X-API-Key", None)

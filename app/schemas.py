@@ -40,7 +40,9 @@ class SymptomRequest(BaseModel):
 
 class RankedCondition(BaseModel):
     disease: str
-    probability: float = Field(..., description="Forest confidence, 0 to 1.")
+    probability: float = Field(
+        ..., description="Symptom model score, 0 to 1; not a calibrated clinical risk.",
+    )
     confidence: str = Field(..., description="Bucketed probability: low, moderate, high.")
     matched_symptoms: list[str] = Field(
         default_factory=list,

@@ -14,13 +14,23 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app import db
-from app.config import ALLOWED_ORIGINS, API_TITLE, API_VERSION, PRELOAD_MODELS
+from app.config import (
+    ALLOWED_ORIGINS,
+    API_TITLE,
+    API_VERSION,
+    MAX_REQUEST_BYTES,
+    PRELOAD_MODELS,
+    RATE_LIMIT_PER_MINUTE,
+    STATIC_DIR,
+)
 from app.registry import ModelNotAvailable, registry
 from app.routers import meta, predict, review, risk
 from app.schemas import HealthResponse
+from app.security import RequestGuard, SlidingWindow
 
 logging.basicConfig(
     level=logging.INFO,
@@ -52,11 +62,14 @@ app = FastAPI(
         "Ranks likely conditions from reported symptoms. Estimates the risk of heart "
         "disease, diabetes and liver disease from clinical measurements, and the risk that a "
         "confirmed dengue case turns serious. Reads single blood cell images for malaria. "
-        "Every prediction is logged to PostgreSQL so it can be checked against what actually "
-        "happened."
+        "Optional PostgreSQL logging stores predictions for later review. "
+        "History and review routes require an administrator API key."
     ),
     lifespan=lifespan,
 )
+
+app.state.prediction_limiter = SlidingWindow(limit=RATE_LIMIT_PER_MINUTE)
+app.add_middleware(RequestGuard, state=app.state, max_body=MAX_REQUEST_BYTES)
 
 app.add_middleware(
     CORSMiddleware,
@@ -90,7 +103,7 @@ app.include_router(risk.router)
 app.include_router(risk.review_router)
 
 
-@app.get("/", tags=["meta"], summary="Service description")
+@app.get("/api", tags=["meta"], summary="Service description")
 def root() -> dict[str, object]:
     return {
         "service": "disease-prediction-api",
@@ -98,6 +111,7 @@ def root() -> dict[str, object]:
         "docs": "/docs",
         "endpoints": [
             "GET  /health",
+            "GET  /ready",
             "GET  /symptoms",
             "GET  /diseases",
             "GET  /diseases/{name}/symptoms",
@@ -133,5 +147,19 @@ def health() -> HealthResponse:
         status="ok" if healthy else "degraded",
         version=API_VERSION,
         models=status,
-        database=db.stats(),
+        database={"logging_enabled": db.enabled(), "configured": db.configured()},
     )
+
+
+@app.get("/ready", tags=["meta"], summary="Deployment readiness")
+def ready() -> JSONResponse:
+    available = all(entry["loaded"] for entry in registry.status().values())
+    return JSONResponse({"ready": available}, status_code=200 if available else 503)
+
+
+@app.get("/", include_in_schema=False)
+def frontend() -> FileResponse:
+    return FileResponse(STATIC_DIR / "index.html")
+
+
+app.mount("/static", StaticFiles(directory=STATIC_DIR, check_dir=False), name="static")

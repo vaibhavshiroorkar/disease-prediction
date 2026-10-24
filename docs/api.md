@@ -6,6 +6,38 @@ Interactive docs are at `/docs`.
 Every prediction response carries a `disclaimer` field. It is part of the
 contract: a client cannot render a result without the caveat travelling with it.
 
+## Access and request limits
+
+Prediction and model catalogue routes are public. All `/predictions` and
+`/risk-predictions` routes require an administrator key in `X-API-Key`:
+
+```bash
+curl -H "X-API-Key: $ADMIN_API_KEY" http://localhost:8000/predictions
+```
+
+Set `ADMIN_API_KEY` on the server to enable administrator access. Without it,
+protected routes return 503. Missing or incorrect keys return 401 when access
+is configured. `/docs` also accepts the key through its `Authorize` control.
+
+Prediction and administrator requests share a per-client limit of 60 requests
+per minute by default. Exceeding it returns 429 with a `Retry-After` header.
+Request bodies may not exceed 2,100,000 bytes. Prediction and administrator
+responses use `Cache-Control: no-store`.
+
+See [deployment settings](deployment.md#environment-variables) to configure
+origins, proxy trust, request limits and optional database logging.
+
+## GET / and /api
+
+`/` serves the web interface. `/api` returns the service name, version, API
+documentation URL and endpoint list.
+
+## GET /ready
+
+Returns 200 with `{"ready": true}` when all six model artifacts are loaded.
+Returns 503 with `{"ready": false}` if any model is unavailable. Database
+logging is optional and does not affect readiness.
+
 ## GET /health
 
 Returns 200 whenever the process is alive. `status` is `degraded` only when a
@@ -29,14 +61,13 @@ first.
   },
   "database": {
     "logging_enabled": true,
-    "total": 128,
-    "reviewed": 40,
-    "correct": 36,
-    "wrong": 4,
-    "observed_accuracy": 0.9
+    "configured": true
   }
 }
 ```
+
+Review statistics require administrator access through `/predictions/stats`
+or `/risk-predictions/stats`.
 
 ## GET /symptoms
 
@@ -101,6 +132,9 @@ than running feature attribution per request.
 `confidence` buckets the probability: `low` below 0.25, `moderate` below 0.60,
 `high` at or above it.
 
+The symptom estimator is logistic regression. Its scores rank conditions from
+the training data and are not calibrated clinical probabilities.
+
 `prediction_id` is the row id in Postgres, needed to review the prediction
 later. It is `null` when logging is off, which is the normal state with no
 `DATABASE_URL` set.
@@ -135,10 +169,11 @@ request is a 422:
 ## GET /models
 
 Every model the service runs, with its headline scores, read from the artifacts.
+The catalogue contains six entries; this example shows only the heart model.
 
 ```json
 {
-  "count": 4,
+  "count": 6,
   "models": [
     {
       "name": "heart",
@@ -247,7 +282,7 @@ image bytes as the request body, not JSON and not a form:
 curl --data-binary @cell.png -H "Content-Type: image/png" http://localhost:8000/predict/malaria
 ```
 
-PNG and JPEG are accepted, up to 2 MB.
+PNG and JPEG are accepted, up to 2,000,000 bytes and 4,000,000 pixels.
 
 ```json
 {
@@ -281,8 +316,9 @@ itself. A review records whether that cell really was parasitized.
 
 | Status | Meaning |
 |---|---|
+| 413 | Request body exceeds 2,100,000 bytes |
 | 415 | Content-Type is not image/png or image/jpeg |
-| 422 | Empty body, or bytes that are not a readable image |
+| 422 | Empty or unreadable image, or image exceeds its byte or pixel limit |
 | 503 | Artifact missing, or trained with a different version of the feature extractor |
 
 ## Reviewing risk predictions
@@ -290,6 +326,8 @@ itself. A review records whether that cell really was parasitized.
 The risk models log to their own table. A review here records what really
 happened, which is the only way to see whether the calibration holds outside
 the training data.
+
+Every route in this section requires `X-API-Key`.
 
 ### GET /risk-predictions
 
@@ -338,8 +376,8 @@ be checked against real outcomes.
 ## Reviewing logged predictions
 
 These routes exist to close the loop: find what the model got wrong, record the
-right answer, retrain on it. With no database attached they return empty lists
-rather than errors, except the review write itself which returns 503.
+right answer, retrain on it. Every route requires `X-API-Key`. After authentication,
+history lists are empty when logging is off. Review writes return 503.
 
 ### GET /predictions
 
@@ -407,10 +445,13 @@ Returns 404 for an unknown id, and 503 when logging is not active.
 
 | Status | Meaning |
 |---|---|
+| 401 | Administrator key is missing or incorrect |
 | 404 | Unknown disease, model or prediction id |
+| 413 | Request body exceeds 2,100,000 bytes |
 | 415 | `/predict/malaria` got something other than image/png or image/jpeg |
-| 422 | Request failed validation (a value out of range, an unknown field, a missing required field), or no symptom was recognized |
-| 503 | The model artifact is missing, corrupt, or trained on another scikit-learn; or a review was attempted with logging off |
+| 422 | Invalid inputs, no recognized symptoms, or an unreadable or oversized image |
+| 429 | Per-client request limit exceeded; retry after the `Retry-After` interval |
+| 503 | Model unavailable, readiness failed, administrator access unconfigured, or a review attempted with logging off |
 
 Validation happens at the edge through Pydantic, so a malformed request never
 reaches the model and the 422 names the offending field.

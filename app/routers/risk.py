@@ -17,7 +17,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel
 
 from app import db
@@ -36,10 +36,13 @@ from app.schemas import (
     RiskResponse,
     RiskReviewRequest,
 )
+from app.security import require_admin
 
 log = logging.getLogger(__name__)
 router = APIRouter(prefix="/predict", tags=["risk"])
-review_router = APIRouter(prefix="/risk-predictions", tags=["review"])
+review_router = APIRouter(
+    prefix="/risk-predictions", tags=["review"], dependencies=[Depends(require_admin)],
+)
 
 MAX_FACTORS = 3
 

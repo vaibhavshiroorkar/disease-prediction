@@ -1,0 +1,10 @@
+*
+!requirements-runtime.txt
+!app/
+!app/**
+!models/
+!models/**
+!scripts/
+!scripts/serve.py
+**/__pycache__
+**/*.pyc

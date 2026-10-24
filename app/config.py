@@ -14,7 +14,14 @@ ROOT = Path(__file__).resolve().parents[1]
 MODELS_DIR = Path(os.environ.get("MODELS_DIR", ROOT / "models"))
 
 # Comma-separated list, or "*" to allow everything.
-ALLOWED_ORIGINS = [o.strip() for o in os.environ.get("ALLOWED_ORIGINS", "*").split(",") if o.strip()]
+ALLOWED_ORIGINS = [o.strip() for o in os.environ.get("ALLOWED_ORIGINS", "").split(",") if o.strip()]
+
+ADMIN_API_KEY = os.environ.get("ADMIN_API_KEY", "").strip()
+RATE_LIMIT_PER_MINUTE = int(os.environ.get("RATE_LIMIT_PER_MINUTE", "60"))
+if RATE_LIMIT_PER_MINUTE < 1:
+    raise ValueError("RATE_LIMIT_PER_MINUTE must be positive")
+MAX_REQUEST_BYTES = 2_100_000
+STATIC_DIR = ROOT / "app" / "static"
 
 # Load the artifact during startup instead of on first request, so a cold start
 # pays the ~1s load in the health check rather than inside a user's request.

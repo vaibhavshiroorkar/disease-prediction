@@ -81,6 +81,7 @@ def _summary(model: LoadedModel) -> dict[str, Any]:
     cv = model.metrics.get("cross_validation", {})
     return {
         "classes": len(model.classes),
+        "chosen_family": model.metrics.get("chosen_family"),
         "cv_accuracy": cv.get("accuracy"),
         "cv_top_3_accuracy": cv.get("top_3_accuracy"),
         "noise_2_dropped_2_added": model.metrics.get("noise_2_dropped_2_added", {}).get("accuracy"),

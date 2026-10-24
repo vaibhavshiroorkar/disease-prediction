@@ -13,6 +13,10 @@ htmlcov/
 data/raw/
 
 .env
+.env.*
+!.env.example
+test-results/
+playwright-report/
 .DS_Store
 .idea/
 .vscode/

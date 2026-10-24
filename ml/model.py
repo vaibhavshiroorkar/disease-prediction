@@ -99,5 +99,10 @@ def baselines(seed: int = RANDOM_SEED) -> dict[str, Any]:
     """
     return {
         "bernoulli_nb": BernoulliNB(alpha=1.0),
-        "logistic": LogisticRegression(C=1.0, max_iter=5000, random_state=seed),
+        "logistic": symptom_model(seed),
     }
+
+
+def symptom_model(seed: int = RANDOM_SEED) -> LogisticRegression:
+    """Use the fixed baseline that performs better on held-out noisy patterns."""
+    return LogisticRegression(C=1.0, max_iter=5000, random_state=seed)

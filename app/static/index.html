@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Explore six educational disease prediction models, their results, and their limits.">
+  <meta name="theme-color" content="#f6f8f7">
+  <title>Pattern | Disease prediction lab</title>
+  <link rel="icon" href="/static/mark.svg" type="image/svg+xml">
+  <link rel="preload" href="/static/fonts/manrope-variable.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/app.js" type="module"></script>
+</head>
+<body>
+  <a class="skip-link" href="#workspace">Skip to prediction form</a>
+  <header class="site-header page-width">
+    <a class="brand" href="/" aria-label="Pattern home">
+      <img src="/static/mark.svg" alt="" width="40" height="40">
+      <span>Pattern <span class="brand-description">Disease prediction lab</span></span>
+    </a>
+    <nav aria-label="Site links">
+      <a href="#about">About the models</a>
+      <a class="docs-link" href="/docs" target="_blank" rel="noreferrer">API docs
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 5H5v14h14v-3M13 5h6v6M19 5 10 14"/></svg>
+      </a>
+    </nav>
+  </header>
+
+  <main class="page-width">
+    <section class="intro" aria-labelledby="page-title">
+      <div>
+        <p class="intro-label">An open machine learning project</p>
+        <h1 id="page-title">Explore the patterns.<br>Understand the prediction.</h1>
+        <p class="intro-copy">Try a model with symptoms, clinical measurements, or a blood cell image.
+          See what it returns and where its limits begin.</p>
+      </div>
+      <div class="project-note">
+        <svg class="note-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m12 3 8 3v6c0 4-8 9-8 9s-8-5-8-9V6l8-3Z"/><path d="M9 12h6m-3-3v6"/></svg>
+        <span class="note-label">For learning, not diagnosis</span>
+        <p>These models work with public research datasets. A score is not a medical conclusion.</p>
+        <p id="service-status" class="service-status" role="status">Connecting to the models...</p>
+      </div>
+    </section>
+
+    <section class="lab" aria-label="Prediction workspace">
+      <nav class="model-nav" aria-label="Choose a model">
+        <div class="model-nav-heading">
+          <h2>Choose your model</h2>
+          <p class="nav-note">Six ways to explore the data</p>
+        </div>
+        <div class="model-buttons">
+          <button type="button" data-model="symptom" aria-pressed="true" aria-label="Symptoms">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 3H5a2 2 0 0 0-2 2v4a4 4 0 0 0 8 0V5a2 2 0 0 0-2-2ZM7 13v3a5 5 0 0 0 10 0v-2"/><circle cx="17" cy="11" r="3"/><path d="M5 3v3m4-3v3"/></svg>
+            <span>Symptoms</span><small>Rank 41 conditions</small>
+          </button>
+          <button type="button" data-model="heart" aria-pressed="false" aria-label="Heart">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20.4 4.6a5.5 5.5 0 0 0-7.8 0l-.6.6-.6-.6a5.5 5.5 0 0 0-7.8 7.8L12 21l8.4-8.6a5.5 5.5 0 0 0 0-7.8Z"/><path d="M3 11h4l2-4 4 9 2-5h6"/></svg>
+            <span>Heart</span><small>Clinical measurements</small>
+          </button>
+          <button type="button" data-model="diabetes" aria-pressed="false" aria-label="Diabetes">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2S5 10 5 14a7 7 0 0 0 14 0c0-4-7-12-7-12Z"/><path d="M9 15a3 3 0 0 0 3 3"/></svg>
+            <span>Diabetes</span><small>Clinical measurements</small>
+          </button>
+          <button type="button" data-model="liver" aria-pressed="false" aria-label="Liver">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 8c4-4 9-4 12-2l5 1a2 2 0 0 1 1 3l-4 5-5 1-6 4a2 2 0 0 1-3-2V8Z"/><path d="m13 6-1 10M4 10l6-1"/></svg>
+            <span>Liver</span><small>Clinical measurements</small>
+          </button>
+          <button type="button" data-model="dengue" aria-pressed="false" aria-label="Dengue">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 4a3 3 0 0 1 6 0v9a5 5 0 1 1-6 0V4Z"/><path d="M12 7v10m0 0v1m3-10h3m-3-4h3"/><circle cx="12" cy="17" r="1"/></svg>
+            <span>Dengue</span><small>Confirmed cases only</small>
+          </button>
+          <button type="button" data-model="malaria" aria-pressed="false" aria-label="Malaria">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 7c3-2 7 0 8 3s-1 7-4 7-6-3-5-6"/><circle cx="13" cy="11" r="2"/></svg>
+            <span>Malaria</span><small>Single blood cell image</small>
+          </button>
+        </div>
+      </nav>
+
+      <article id="workspace" class="input-panel" tabindex="-1" aria-labelledby="input-title">
+        <div class="panel-heading">
+          <div>
+            <p id="model-kind" class="panel-label">Symptom explorer</p>
+            <h2 id="input-title">Start with the symptoms.</h2>
+          </div>
+          <span id="input-count" class="input-count">Choose one or more</span>
+        </div>
+        <p id="model-description" class="model-description">Choose the symptoms to include. The model ranks conditions from its training dataset.</p>
+        <p id="population-note" class="population-note"></p>
+        <form id="prediction-form" novalidate>
+          <div id="input-fields" aria-busy="true"><p class="loading-copy">Loading input options...</p></div>
+          <div class="form-tools">
+            <button type="button" id="example-button" class="text-button">Use example</button>
+            <button type="button" id="clear-button" class="text-button subdued">Clear inputs</button>
+          </div>
+          <p id="form-error" class="form-error" role="alert" hidden></p>
+          <div class="submit-row">
+            <button type="submit" id="submit-button" class="primary-button" disabled>Run prediction</button>
+            <span id="submit-note">Inputs are sent to the server. Checking logging status...</span>
+          </div>
+        </form>
+      </article>
+
+      <aside id="results" class="results-panel" aria-label="Prediction results" aria-live="polite" aria-busy="false">
+        <div class="empty-result">
+          <span class="result-eyebrow">The next piece of the picture</span>
+          <svg class="result-sketch" viewBox="0 0 240 180" fill="none" aria-hidden="true">
+            <rect x="43" y="22" width="154" height="135" rx="14" fill="white" stroke="#d3e3dd"/>
+            <path d="M65 48h55M65 58h33M65 84h110M65 108h110M65 132h110" stroke="#e2ece8" stroke-width="2" stroke-linecap="round"/>
+            <path d="M65 126c18 0 21-28 40-28s22 13 36-4 21-11 34-22" stroke="#16836f" stroke-width="3" stroke-linecap="round"/>
+            <circle cx="105" cy="98" r="5" fill="#16836f" stroke="white" stroke-width="3"/>
+            <circle cx="141" cy="94" r="5" fill="#16836f" stroke="white" stroke-width="3"/>
+            <circle cx="175" cy="72" r="5" fill="#16836f" stroke="white" stroke-width="3"/>
+            <rect x="156" y="128" width="57" height="32" rx="10" fill="#ddede6" stroke="#c2dcd1"/>
+            <path d="m174 144 6 6 12-13" stroke="#16836f" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <h2>Your results will appear here</h2>
+          <p>Choose your inputs and run a prediction.<br>We'll help you read between the numbers.</p>
+          <span class="result-caption">Just looking around? Try an example.</span>
+        </div>
+      </aside>
+    </section>
+
+    <section id="about" class="about-section" aria-labelledby="about-title">
+      <div>
+        <p class="panel-label">A little context matters</p>
+        <h2 id="about-title">Every model has<br>its limits.</h2>
+      </div>
+      <div class="about-copy">
+        <p>The symptom model learned from just 304 distinct patterns. The clinical models cover specific
+          populations. The dengue model estimates severity after confirmation, and the malaria model
+          reads a cropped cell, not a whole slide.</p>
+        <p>Missing optional measurements are filled with training medians and listed in the result.
+          An input's effect on a score describes the model's behavior, not a medical cause.</p>
+        <p id="privacy-note">Checking whether this deployment records predictions...</p>
+        <a href="/models" target="_blank" rel="noreferrer">View model data and evaluation</a>
+      </div>
+    </section>
+  </main>
+  <footer class="page-width site-footer">
+    <span>Pattern / Disease prediction system</span>
+    <span>Educational use. Consult a qualified clinician for health concerns.</span>
+  </footer>
+</body>
+</html>

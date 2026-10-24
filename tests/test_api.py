@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import pytest
+
 from tests.conftest import requires_db, requires_model
 
 
 def test_root_lists_endpoints(client) -> None:
-    body = client.get("/").json()
+    body = client.get("/api").json()
     assert body["service"] == "disease-prediction-api"
     assert any("/predict/symptoms" in e for e in body["endpoints"])
 
@@ -153,6 +155,7 @@ def test_prediction_id_is_null_when_logging_is_off(client) -> None:
 
 @requires_model
 @requires_db
+@pytest.mark.usefixtures("admin_client")
 def test_prediction_is_logged_and_can_be_reviewed(client, clean_table) -> None:
     """The full loop: predict, find it in the log, mark it wrong, see it queued."""
     body = client.post(
@@ -179,6 +182,7 @@ def test_prediction_is_logged_and_can_be_reviewed(client, clean_table) -> None:
 
 @requires_model
 @requires_db
+@pytest.mark.usefixtures("admin_client")
 def test_review_of_an_unknown_id_returns_404(client, clean_table) -> None:
     response = client.post(
         "/predictions/424242/review", json={"was_correct": True, "actual_disease": None}
@@ -187,6 +191,7 @@ def test_review_of_an_unknown_id_returns_404(client, clean_table) -> None:
 
 
 @requires_db
+@pytest.mark.usefixtures("admin_client")
 def test_stats_endpoint_reports_logging_state(client, clean_table) -> None:
     body = client.get("/predictions/stats").json()
     assert body["logging_enabled"] is True
@@ -194,6 +199,7 @@ def test_stats_endpoint_reports_logging_state(client, clean_table) -> None:
 
 
 @requires_db
+@pytest.mark.usefixtures("admin_client")
 def test_blank_actual_disease_is_stored_as_null(client, clean_table) -> None:
     """'  ' is not a diagnosis; it must not become a training label."""
     prediction_id = clean_table.log_prediction(

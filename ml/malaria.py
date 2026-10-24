@@ -27,7 +27,7 @@ import time
 import zipfile
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -403,7 +403,7 @@ def train_malaria(figures_dir: Path) -> dict[str, Any]:
             "prevalence": round(float(data.y.mean()), 4),
             "cleaning": data.notes,
         },
-        "trained_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "trained_at": datetime.now(UTC).isoformat(timespec="seconds"),
         "sklearn_version": sklearn.__version__,
         "train_seconds": round(time.perf_counter() - started, 1),
     }

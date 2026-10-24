@@ -3,7 +3,7 @@
   "kind": "multiclass",
   "classes": 41,
   "features": 131,
-  "trained_at": "2026-10-12T16:20:46+00:00",
+  "trained_at": "2026-10-23T22:25:25+00:00",
   "sklearn_version": "1.9.0",
   "dataset": {
     "source": "https://raw.githubusercontent.com/anujdutt9/Disease-Prediction-from-Symptoms/master/dataset/training_data.csv",
@@ -13,6 +13,7 @@
     "rows_feedback": 0
   },
   "metrics": {
+    "chosen_family": "logistic",
     "search": {
       "candidates": 32,
       "tied_at_best": 16,
@@ -33,7 +34,7 @@
       "macro_recall": 1.0,
       "macro_f1": 1.0,
       "top_3_accuracy": 1.0,
-      "log_loss": 0.2947,
+      "log_loss": 0.3165,
       "weakest_classes": []
     },
     "holdout": {
@@ -91,19 +92,19 @@
       "dropped_symptoms": 1,
       "added_symptoms": 1,
       "trials": 20,
-      "accuracy": 0.9982,
-      "accuracy_std": 0.0024,
-      "macro_recall": 0.998,
+      "accuracy": 0.9964,
+      "accuracy_std": 0.0031,
+      "macro_recall": 0.9966,
       "top_3_accuracy": 1.0
     },
     "noise_2_dropped_2_added": {
       "dropped_symptoms": 2,
       "added_symptoms": 2,
       "trials": 20,
-      "accuracy": 0.9405,
-      "accuracy_std": 0.0117,
-      "macro_recall": 0.9209,
-      "top_3_accuracy": 0.9919
+      "accuracy": 0.9493,
+      "accuracy_std": 0.0105,
+      "macro_recall": 0.9317,
+      "top_3_accuracy": 0.9954
     },
     "comparison": [
       {
@@ -142,6 +143,7 @@
         "noise_3_accuracy": 0.8447,
         "noise_3_top_3": 0.9757
       }
-    ]
+    ],
+    "feature_importance_method": "normalized mean absolute logistic coefficient"
   }
 }
