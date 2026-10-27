@@ -1,5 +1,9 @@
 # Disease Prediction System
 
+Live demo: [disease-prediction-f4qa.onrender.com](https://disease-prediction-f4qa.onrender.com).
+It runs on Render's free plan, so the first request after a quiet spell takes
+about a minute to wake the server.
+
 This project serves six machine learning models through one FastAPI service. You can
 send a list of symptoms and get a ranked list from 41 conditions. You can also
 submit clinical measurements for heart disease, diabetes and liver disease risk
@@ -641,3 +645,7 @@ from the 1980s. The diabetes data covers one population of women, and the liver
 data comes from one region of India. The dengue model covers confirmed cases
 in Brazil. The malaria model classifies individual cells from one hospital's
 slides. Every prediction response includes an educational-use disclaimer.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
