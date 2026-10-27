@@ -15,9 +15,12 @@ about the dataset than its ability to handle real symptoms. The other models
 use patient records or microscope images, with separate tests for calibration,
 data leakage and performance across hospitals or years.
 
-The web interface covers all six models, with searchable symptoms, clinical
-forms and blood cell image uploads. It shows the results alongside model limits
-and missing inputs. FastAPI serves the interface and API from the same address.
+The web interface has a home page, a checks page for all six models, a models
+page with each model's data and test results, and an about page on reading
+results and privacy. Checks cover searchable symptoms, clinical forms and blood
+cell image uploads, and each result shows the model's cutoff, its test accuracy
+and any inputs it filled in. FastAPI serves the interface and API from the same
+address.
 Postgres logging is optional; when enabled, it stores predictions for later review.
 
 ## Run locally
