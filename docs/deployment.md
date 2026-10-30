@@ -45,7 +45,7 @@ directly does not automatically load `.env`; export those variables in your shel
 | `RATE_LIMIT_PER_MINUTE` | `60` | Shared request budget per client for prediction and administrator routes |
 | `ALLOWED_ORIGINS` | empty | Comma-separated browser origins allowed by CORS; unnecessary for this frontend |
 | `FORWARDED_ALLOW_IPS` | `127.0.0.1` | Reverse proxy addresses Uvicorn trusts for forwarded client IPs |
-| `TRUSTED_PROXY_HOPS` | `0` | Proxies that append to `X-Forwarded-For`; the limiter keys on the entry the last one wrote |
+| `CLIENT_IP_HEADER` | empty | Header the hosting edge sets to the visitor's address; the limiter keys on it. Empty uses the socket address |
 | `DATABASE_POOL_MIN`, `DATABASE_POOL_MAX` | `1`, `5` | Postgres connection pool size when logging is on |
 | `PRELOAD_MODELS` | `1` | Load every artifact during startup |
 | `MODELS_DIR` | `models/` in the project | Override the artifact directory when running Python directly |
@@ -56,17 +56,18 @@ Do not trust arbitrary forwarded headers from public clients. If the proxy is
 not trusted, its requests share one rate-limit budget instead.
 
 On a host whose proxy addresses change, such as Render, leave
-`FORWARDED_ALLOW_IPS` alone and set `TRUSTED_PROXY_HOPS=1` instead. The limiter then
-reads the last `X-Forwarded-For` entry, which the host's proxy wrote. Entries
-before it come from the client and are ignored, so a forged header cannot buy a
-fresh budget.
+`FORWARDED_ALLOW_IPS` alone and set `CLIENT_IP_HEADER=CF-Connecting-IP` instead.
+Render's edge sets that header to the visitor's address and overwrites any value
+the client sent, so a forged header cannot buy a fresh budget. `X-Forwarded-For`
+does not work there: the client writes its first entries, and the last ones are
+internal proxy addresses that change between requests.
 
 ## Render
 
 The live demo runs on Render's free plan as a Docker web service.
 [render.yaml](../render.yaml) describes it. If the service was created by hand in
 the dashboard, set the same environment variables there; in particular
-`TRUSTED_PROXY_HOPS=1`, or every visitor shares one rate-limit budget. A free
+`CLIENT_IP_HEADER=CF-Connecting-IP`, or visitors share a few rate-limit budgets. A free
 service sleeps after 15 idle minutes, and the first request after that waits
 about a minute for it to start.
 

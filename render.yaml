@@ -8,8 +8,9 @@ services:
     numInstances: 1
     healthCheckPath: /ready
     envVars:
-      # Render's proxy appends the visitor's address to X-Forwarded-For.
-      - key: TRUSTED_PROXY_HOPS
-        value: "1"
+      # Render's edge sets this to the visitor's address and overwrites any
+      # value the client sent.
+      - key: CLIENT_IP_HEADER
+        value: CF-Connecting-IP
       - key: PRELOAD_MODELS
         value: "1"

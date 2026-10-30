@@ -59,20 +59,17 @@ class SlidingWindow:
         return 0
 
 
-def client_address(scope: Scope, hops: int) -> str:
+def client_address(scope: Scope, header: str) -> str:
     """The address to rate limit on.
 
-    Only the last `hops` X-Forwarded-For entries were written by proxies we
-    trust. Anything earlier was supplied by the client, so it is ignored.
+    X-Forwarded-For is no use behind Render: the client writes its first
+    entries and the last ones are internal proxies that change per request.
     """
-    if hops > 0:
-        forwarded: list[str] = []
+    if header:
+        wanted = header.encode("latin-1")
         for name, value in scope.get("headers", []):
-            if name == b"x-forwarded-for":
-                forwarded += [part.strip() for part in value.decode("latin-1").split(",")]
-        forwarded = [part for part in forwarded if part]
-        if len(forwarded) >= hops:
-            return forwarded[-hops]
+            if name == wanted and (address := value.decode("latin-1").strip()):
+                return address
     client = scope.get("client")
     return client[0] if client else "unknown"
 
@@ -110,7 +107,7 @@ class RequestGuard:
             scope["method"] == "POST" and path.startswith("/predict/")
         )
         if limited:
-            address = client_address(scope, config.TRUSTED_PROXY_HOPS)
+            address = client_address(scope, config.CLIENT_IP_HEADER)
             retry = self.state.prediction_limiter.retry_after(address)
             if retry:
                 response = JSONResponse(

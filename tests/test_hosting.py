@@ -133,28 +133,29 @@ def test_ready_with_lazy_loading_checks_the_files_on_disk(client, monkeypatch):
     assert client.get("/ready").status_code == 503
 
 
-def test_limiter_keys_on_the_entry_the_trusted_proxy_appended(client, monkeypatch):
+def test_limiter_keys_on_the_edge_address_header(client, monkeypatch):
     from app.security import SlidingWindow
 
-    monkeypatch.setattr(config, "TRUSTED_PROXY_HOPS", 1)
+    monkeypatch.setattr(config, "CLIENT_IP_HEADER", "cf-connecting-ip")
     app.state.prediction_limiter = SlidingWindow(limit=2)
-    # The client controls everything before the last entry, so changing it
-    # must not buy a fresh budget.
+    # The edge overwrites CF-Connecting-IP. X-Forwarded-For is whatever the
+    # client wrote, so changing it must not buy a fresh budget.
     for forged in ["1.1.1.1", "2.2.2.2"]:
-        headers = {"X-Forwarded-For": f"{forged}, 203.0.113.9"}
+        headers = {"CF-Connecting-IP": "203.0.113.9", "X-Forwarded-For": forged}
         assert client.post("/predict/symptoms", json={}, headers=headers).status_code == 422
-    headers = {"X-Forwarded-For": "3.3.3.3, 203.0.113.9"}
+    headers = {"CF-Connecting-IP": "203.0.113.9", "X-Forwarded-For": "3.3.3.3"}
     assert client.post("/predict/symptoms", json={}, headers=headers).status_code == 429
     # A different real client still has its own budget.
-    headers = {"X-Forwarded-For": "198.51.100.4"}
+    headers = {"CF-Connecting-IP": "198.51.100.4"}
     assert client.post("/predict/symptoms", json={}, headers=headers).status_code == 422
 
 
-def test_client_address_falls_back_to_the_socket_without_enough_entries():
+def test_client_address_falls_back_to_the_socket():
     from app.security import client_address
 
-    scope = {"client": ("10.0.0.1", 1234), "headers": [(b"x-forwarded-for", b"9.9.9.9")]}
-    assert client_address(scope, 0) == "10.0.0.1"
-    assert client_address(scope, 1) == "9.9.9.9"
-    assert client_address(scope, 2) == "10.0.0.1"
-    assert client_address({"client": None, "headers": []}, 1) == "unknown"
+    scope = {"client": ("10.0.0.1", 1234), "headers": [(b"cf-connecting-ip", b"9.9.9.9")]}
+    assert client_address(scope, "") == "10.0.0.1"
+    assert client_address(scope, "cf-connecting-ip") == "9.9.9.9"
+    blank = {"client": ("10.0.0.1", 1), "headers": [(b"cf-connecting-ip", b" ")]}
+    assert client_address(blank, "cf-connecting-ip") == "10.0.0.1"
+    assert client_address({"client": None, "headers": []}, "cf-connecting-ip") == "unknown"

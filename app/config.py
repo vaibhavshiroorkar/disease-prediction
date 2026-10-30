@@ -22,13 +22,10 @@ if RATE_LIMIT_PER_MINUTE < 1:
     raise ValueError("RATE_LIMIT_PER_MINUTE must be positive")
 MAX_REQUEST_BYTES = 2_100_000
 
-# How many proxies in front of the app append to X-Forwarded-For. With 1, the
-# rate limiter keys on the last entry, the one the host's own proxy wrote; the
-# entries before it come from the client and can be forged. 0 uses the socket
-# address, which behind a proxy is the proxy itself.
-TRUSTED_PROXY_HOPS = int(os.environ.get("TRUSTED_PROXY_HOPS", "0"))
-if TRUSTED_PROXY_HOPS < 0:
-    raise ValueError("TRUSTED_PROXY_HOPS cannot be negative")
+# A header the hosting edge sets to the visitor's address and overwrites if the
+# client sent one, such as CF-Connecting-IP on Render. The rate limiter keys on
+# it. Empty uses the socket address, which behind a proxy is the proxy itself.
+CLIENT_IP_HEADER = os.environ.get("CLIENT_IP_HEADER", "").strip().lower()
 STATIC_DIR = ROOT / "app" / "static"
 
 # Load the artifact during startup instead of on first request, so a cold start
