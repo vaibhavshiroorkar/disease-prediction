@@ -69,7 +69,7 @@ def test_browser_responses_prevent_framing_and_external_scripts(client):
 def test_prediction_limit_is_enforced_without_trusting_forwarded_headers(client, monkeypatch):
     from app.security import SlidingWindow
 
-    monkeypatch.setattr(app.state, "prediction_limiter", SlidingWindow(limit=2))
+    app.state.prediction_limiter = SlidingWindow(limit=2)
     assert client.post("/predict/symptoms", json={}).status_code == 422
     assert client.post("/predict/symptoms", json={}).status_code == 422
     response = client.post("/predict/symptoms", json={}, headers={"X-Forwarded-For": "other"})
@@ -137,7 +137,7 @@ def test_limiter_keys_on_the_entry_the_trusted_proxy_appended(client, monkeypatc
     from app.security import SlidingWindow
 
     monkeypatch.setattr(config, "TRUSTED_PROXY_HOPS", 1)
-    monkeypatch.setattr(app.state, "prediction_limiter", SlidingWindow(limit=2))
+    app.state.prediction_limiter = SlidingWindow(limit=2)
     # The client controls everything before the last entry, so changing it
     # must not buy a fresh budget.
     for forged in ["1.1.1.1", "2.2.2.2"]:

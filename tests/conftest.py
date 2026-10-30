@@ -76,10 +76,18 @@ def symptom_keys(client) -> list[str]:
 
 
 @pytest.fixture(autouse=True)
-def request_budget(monkeypatch):
+def request_budget():
+    """A fresh, generous limiter per test; tests may swap in a stricter one.
+
+    Saved and restored by hand: pytest 9.2's monkeypatch reads the old value
+    statically, misses attributes kept in Starlette's State, and deletes them.
+    """
     from app.security import SlidingWindow
 
-    monkeypatch.setattr(app.state, "prediction_limiter", SlidingWindow(limit=600))
+    previous = app.state.prediction_limiter
+    app.state.prediction_limiter = SlidingWindow(limit=600)
+    yield
+    app.state.prediction_limiter = previous
 
 
 @pytest.fixture()
