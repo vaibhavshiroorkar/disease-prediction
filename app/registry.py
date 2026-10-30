@@ -171,6 +171,13 @@ class Registry:
                 self._errors[name] = str(exc)
                 log.warning("could not load %s: %s", name, exc)
 
+    def loadable(self) -> bool:
+        """Every artifact is cached, or on disk and not yet known to fail."""
+        return all(
+            name in self._cache or (self.path_for(name).exists() and name not in self._errors)
+            for name in MODEL_NAMES
+        )
+
     def status(self) -> dict[str, Any]:
         available = {}
         for name in MODEL_NAMES:

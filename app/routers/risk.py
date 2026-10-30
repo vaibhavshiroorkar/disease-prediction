@@ -18,6 +18,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel
 
 from app import db
@@ -172,6 +173,7 @@ def predict_risk(name: str, request: BaseModel) -> RiskResponse:
         operating_point=operating,
         factors=factors,
         imputed_fields=imputed,
+        imputed_values={f: model.reference_values[f] for f in imputed if f in model.reference_values},
         prediction_id=prediction_id,
         model_metrics=metrics,
         disclaimer=DISCLAIMER,
@@ -250,13 +252,17 @@ async def predict_malaria(request: Request) -> MalariaResponse:
     data = await request.body()
     if not data:
         raise HTTPException(status_code=422, detail="the request body is empty; send the image bytes")
-    try:
+    def score() -> tuple[Any, float]:
         image = read_image(data)
+        features = cell_features(image).reshape(1, -1)
+        return image, float(model.estimator.predict_proba(features)[0, 1])
+
+    # Decoding and feature extraction take long enough to stall every other
+    # request on the single worker, so they run in the thread pool.
+    try:
+        image, probability = await run_in_threadpool(score)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
-
-    features = cell_features(image).reshape(1, -1)
-    probability = float(model.estimator.predict_proba(features)[0, 1])
     flagged = probability >= model.threshold
     info = ImageInfo(
         format=image.format, width=image.width, height=image.height, sha256=hashlib.sha256(data).hexdigest()

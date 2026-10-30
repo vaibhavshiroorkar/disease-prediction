@@ -1,0 +1,15 @@
+# Free-tier demo. See docs/deployment.md#render.
+services:
+  - type: web
+    name: disease-prediction
+    runtime: docker
+    plan: free
+    # The rate limiter keeps its counts in process memory.
+    numInstances: 1
+    healthCheckPath: /ready
+    envVars:
+      # Render's proxy appends the visitor's address to X-Forwarded-For.
+      - key: TRUSTED_PROXY_HOPS
+        value: "1"
+      - key: PRELOAD_MODELS
+        value: "1"

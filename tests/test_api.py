@@ -211,3 +211,14 @@ def test_blank_actual_disease_is_stored_as_null(client, clean_table) -> None:
     )
     assert response.status_code == 200
     assert clean_table.fetch_training_feedback() == []
+
+
+@requires_model
+@pytest.mark.usefixtures("admin_client")
+def test_review_rejects_a_condition_the_model_does_not_know(client) -> None:
+    """A typo must not become a new class on the next retrain."""
+    response = client.post("/predictions/1/review", json={"was_correct": False, "actual_disease": "Acen"})
+    assert response.status_code == 422
+    assert "41 conditions" in response.json()["detail"]
+    response = client.post("/predictions/1/review", json={"was_correct": False, "actual_disease": "x" * 101})
+    assert response.status_code == 422

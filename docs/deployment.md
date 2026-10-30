@@ -12,7 +12,7 @@ docker run --rm -p 127.0.0.1:8000:8000 disease-prediction
 ```
 
 Open http://localhost:8000. `/docs` provides interactive API documentation;
-`/api` returns the service metadata that previously lived at `/`.
+`/api` returns the service metadata.
 
 For a managed Docker host, expose its assigned port and configure HTTP health
 checks on `/ready`. The process reads `PORT` and listens on `0.0.0.0`. It uses one
@@ -45,6 +45,8 @@ directly does not automatically load `.env`; export those variables in your shel
 | `RATE_LIMIT_PER_MINUTE` | `60` | Shared request budget per client for prediction and administrator routes |
 | `ALLOWED_ORIGINS` | empty | Comma-separated browser origins allowed by CORS; unnecessary for this frontend |
 | `FORWARDED_ALLOW_IPS` | `127.0.0.1` | Reverse proxy addresses Uvicorn trusts for forwarded client IPs |
+| `TRUSTED_PROXY_HOPS` | `0` | Proxies that append to `X-Forwarded-For`; the limiter keys on the entry the last one wrote |
+| `DATABASE_POOL_MIN`, `DATABASE_POOL_MAX` | `1`, `5` | Postgres connection pool size when logging is on |
 | `PRELOAD_MODELS` | `1` | Load every artifact during startup |
 | `MODELS_DIR` | `models/` in the project | Override the artifact directory when running Python directly |
 
@@ -52,6 +54,21 @@ For correct per-client limits behind a proxy, set `FORWARDED_ALLOW_IPS` to that
 proxy's actual addresses and prevent direct access to the application port.
 Do not trust arbitrary forwarded headers from public clients. If the proxy is
 not trusted, its requests share one rate-limit budget instead.
+
+On a host whose proxy addresses change, such as Render, leave
+`FORWARDED_ALLOW_IPS` alone and set `TRUSTED_PROXY_HOPS=1` instead. The limiter then
+reads the last `X-Forwarded-For` entry, which the host's proxy wrote. Entries
+before it come from the client and are ignored, so a forged header cannot buy a
+fresh budget.
+
+## Render
+
+The live demo runs on Render's free plan as a Docker web service.
+[render.yaml](../render.yaml) describes it. If the service was created by hand in
+the dashboard, set the same environment variables there; in particular
+`TRUSTED_PROXY_HOPS=1`, or every visitor shares one rate-limit budget. A free
+service sleeps after 15 idle minutes, and the first request after that waits
+about a minute for it to start.
 
 The limiter returns 429 with `Retry-After` when a client exceeds its budget.
 It bounds client storage to 4,096 entries. Multiple replicas need a shared edge

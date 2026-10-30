@@ -50,7 +50,7 @@ def read_image(data: bytes) -> Image.Image:
     if len(data) > MAX_IMAGE_BYTES:
         raise ValueError(f"image is {len(data)} bytes; the limit is {MAX_IMAGE_BYTES}")
     try:
-        image = Image.open(io.BytesIO(data))
+        image = Image.open(io.BytesIO(data), formats=["PNG", "JPEG"])
         if image.width * image.height > MAX_IMAGE_PIXELS:
             raise ValueError(f"image dimensions exceed {MAX_IMAGE_PIXELS} pixels")
         image.load()

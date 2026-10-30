@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import io
+
 import pytest
 
 from app.registry import TABULAR_RISK_MODELS, registry
@@ -183,6 +185,17 @@ def test_malaria_rejects_what_is_not_an_image(client) -> None:
 
 
 @requires_model
+def test_malaria_reads_only_png_and_jpeg(client) -> None:
+    """The route promises PNG or JPEG; other formats Pillow knows are refused."""
+    buffer = io.BytesIO()
+    cell(False).save(buffer, format="GIF")
+    response = client.post(
+        "/predict/malaria", content=buffer.getvalue(), headers={"Content-Type": "image/png"}
+    )
+    assert response.status_code == 422
+
+
+@requires_model
 @requires_db
 @pytest.mark.usefixtures("admin_client")
 def test_risk_prediction_is_logged_and_reviewed(client, clean_table) -> None:
@@ -206,3 +219,11 @@ def test_risk_prediction_is_logged_and_reviewed(client, clean_table) -> None:
 @pytest.mark.usefixtures("admin_client")
 def test_review_of_an_unknown_risk_prediction_is_404(client, clean_table) -> None:
     assert client.post("/risk-predictions/999999/review", json={"had_condition": False}).status_code == 404
+
+
+@requires_model
+def test_left_out_yes_no_inputs_report_the_answer_they_were_filled_with(client) -> None:
+    """Dengue fills missing signs with the most common answer, which is yes for fever."""
+    body = client.post("/predict/dengue", json={"age": 34, "sex": 0}).json()
+    assert set(body["imputed_values"]) == set(body["imputed_fields"])
+    assert body["imputed_values"]["fever"] in (0.0, 1.0)

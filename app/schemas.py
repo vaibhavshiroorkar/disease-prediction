@@ -77,7 +77,9 @@ class ReviewRequest(BaseModel):
     was_correct: bool = Field(..., description="Whether the top-ranked condition was right.")
     actual_disease: str | None = Field(
         None,
-        description="What the condition actually was. Required to retrain on this row.",
+        max_length=100,
+        description="What the condition actually was, as one of the model's condition names. "
+        "Required to retrain on this row.",
     )
 
     @field_validator("actual_disease")
@@ -265,7 +267,12 @@ class RiskResponse(BaseModel):
         default_factory=list, description="The supplied inputs that moved this risk the most."
     )
     imputed_fields: list[str] = Field(
-        default_factory=list, description="Inputs left out and filled with the training median."
+        default_factory=list,
+        description="Inputs left out. Measurements are filled with the training median, "
+        "yes/no and category inputs with the most common answer.",
+    )
+    imputed_values: dict[str, float] = Field(
+        default_factory=dict, description="The typical training value for each input that was left out."
     )
     prediction_id: int | None = None
     model_metrics: dict[str, Any] = Field(default_factory=dict)

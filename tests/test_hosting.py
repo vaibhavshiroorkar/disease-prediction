@@ -121,3 +121,40 @@ def test_ready_fails_when_a_model_is_unavailable(client, monkeypatch):
 
 def test_ready_succeeds_when_models_are_loaded(client):
     assert client.get("/ready").status_code == 200
+
+
+def test_ready_with_lazy_loading_checks_the_files_on_disk(client, monkeypatch):
+    import app.main as main
+
+    monkeypatch.setattr(main, "PRELOAD_MODELS", False)
+    monkeypatch.setattr(registry, "_cache", {})
+    assert client.get("/ready").status_code == 200
+    monkeypatch.setattr(registry, "_errors", {"heart": "could not read heart.joblib"})
+    assert client.get("/ready").status_code == 503
+
+
+def test_limiter_keys_on_the_entry_the_trusted_proxy_appended(client, monkeypatch):
+    from app.security import SlidingWindow
+
+    monkeypatch.setattr(config, "TRUSTED_PROXY_HOPS", 1)
+    monkeypatch.setattr(app.state, "prediction_limiter", SlidingWindow(limit=2))
+    # The client controls everything before the last entry, so changing it
+    # must not buy a fresh budget.
+    for forged in ["1.1.1.1", "2.2.2.2"]:
+        headers = {"X-Forwarded-For": f"{forged}, 203.0.113.9"}
+        assert client.post("/predict/symptoms", json={}, headers=headers).status_code == 422
+    headers = {"X-Forwarded-For": "3.3.3.3, 203.0.113.9"}
+    assert client.post("/predict/symptoms", json={}, headers=headers).status_code == 429
+    # A different real client still has its own budget.
+    headers = {"X-Forwarded-For": "198.51.100.4"}
+    assert client.post("/predict/symptoms", json={}, headers=headers).status_code == 422
+
+
+def test_client_address_falls_back_to_the_socket_without_enough_entries():
+    from app.security import client_address
+
+    scope = {"client": ("10.0.0.1", 1234), "headers": [(b"x-forwarded-for", b"9.9.9.9")]}
+    assert client_address(scope, 0) == "10.0.0.1"
+    assert client_address(scope, 1) == "9.9.9.9"
+    assert client_address(scope, 2) == "10.0.0.1"
+    assert client_address({"client": None, "headers": []}, 1) == "unknown"

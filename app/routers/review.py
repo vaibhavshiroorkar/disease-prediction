@@ -13,6 +13,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app import db
+from app.registry import ModelNotAvailable, registry
 from app.schemas import LoggedPrediction, ReviewRequest, ReviewResponse
 from app.security import require_admin
 
@@ -46,6 +47,19 @@ def prediction_stats() -> dict[str, object]:
 
 @router.post("/{prediction_id}/review", response_model=ReviewResponse, summary="Record a verdict")
 def review_prediction(prediction_id: int, request: ReviewRequest) -> ReviewResponse:
+    if request.actual_disease is not None:
+        try:
+            known = registry.get("symptom").classes
+        except ModelNotAvailable as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+        if request.actual_disease not in known:
+            # A typo here would become a new class the next time the model retrains.
+            raise HTTPException(
+                status_code=422,
+                detail=f"'{request.actual_disease}' is not one of the {len(known)} conditions "
+                "the model knows",
+            )
+
     if not db.enabled():
         raise HTTPException(
             status_code=503,

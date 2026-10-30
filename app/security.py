@@ -59,6 +59,24 @@ class SlidingWindow:
         return 0
 
 
+def client_address(scope: Scope, hops: int) -> str:
+    """The address to rate limit on.
+
+    Only the last `hops` X-Forwarded-For entries were written by proxies we
+    trust. Anything earlier was supplied by the client, so it is ignored.
+    """
+    if hops > 0:
+        forwarded: list[str] = []
+        for name, value in scope.get("headers", []):
+            if name == b"x-forwarded-for":
+                forwarded += [part.strip() for part in value.decode("latin-1").split(",")]
+        forwarded = [part for part in forwarded if part]
+        if len(forwarded) >= hops:
+            return forwarded[-hops]
+    client = scope.get("client")
+    return client[0] if client else "unknown"
+
+
 class RequestGuard:
     def __init__(self, app: ASGIApp, state: State, max_body: int) -> None:
         self.app = app
@@ -92,9 +110,8 @@ class RequestGuard:
             scope["method"] == "POST" and path.startswith("/predict/")
         )
         if limited:
-            # Forwarded headers are accepted only when Uvicorn trusts the proxy.
-            client = scope.get("client")
-            retry = self.state.prediction_limiter.retry_after(client[0] if client else "unknown")
+            address = client_address(scope, config.TRUSTED_PROXY_HOPS)
+            retry = self.state.prediction_limiter.retry_after(address)
             if retry:
                 response = JSONResponse(
                     {"detail": "Too many requests. Try again shortly."}, status_code=429,

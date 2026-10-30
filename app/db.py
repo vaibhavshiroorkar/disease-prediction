@@ -96,11 +96,30 @@ def cursor() -> Iterator[Any]:
     if _pool is None:
         yield None
         return
+    # Acquire outside the yield: a contextmanager that raises before yielding
+    # turns into "generator didn't yield" and fails the caller's request.
     try:
-        with _pool.connection() as connection, connection.cursor() as cur:
+        connection_context = _pool.connection(timeout=2)
+        connection = connection_context.__enter__()
+    except Exception as exc:  # noqa: BLE001 - a logging failure is not a request failure
+        log.warning("could not get a database connection: %s", exc)
+        yield None
+        return
+    failure: Exception | None = None
+    try:
+        with connection.cursor() as cur:
             yield cur
     except Exception as exc:  # noqa: BLE001 - a logging failure is not a request failure
         log.warning("database operation failed: %s", exc)
+        failure = exc
+    try:
+        # Passing the failure lets the pool roll back instead of committing.
+        if failure is None:
+            connection_context.__exit__(None, None, None)
+        else:
+            connection_context.__exit__(type(failure), failure, failure.__traceback__)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("could not return the database connection: %s", exc)
 
 
 SCHEMA = """

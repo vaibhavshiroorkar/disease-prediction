@@ -22,8 +22,8 @@ data leakage and performance across hospitals or years.
 The web interface has a home page, a checks page for all six models, a models
 page with each model's data and test results, and an about page on reading
 results and privacy. Checks cover searchable symptoms, clinical forms and blood
-cell image uploads, and each result shows the model's cutoff, its test accuracy
-and any inputs it filled in. FastAPI serves the interface and API from the same
+cell image uploads, and each result shows the model's cutoff, its sensitivity,
+specificity and precision on held-out data, and any inputs it filled in. FastAPI serves the interface and API from the same
 address.
 Postgres logging is optional; when enabled, it stores predictions for later review.
 
@@ -37,7 +37,7 @@ On Windows, run these commands in PowerShell:
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
+python -m pip install --require-hashes -r requirements-runtime.txt
 python -m uvicorn app.main:app --reload
 ```
 
@@ -46,12 +46,15 @@ On macOS or Linux:
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-python -m pip install -r requirements.txt
+python -m pip install --require-hashes -r requirements-runtime.txt
 python -m uvicorn app.main:app --reload
 ```
 
 Then open http://localhost:8000 for the web interface. Interactive API docs are
 at `/docs`, and service information is at `/api`.
+
+`requirements-runtime.txt` is the hash-locked set the Docker image and CI use.
+Training and the tests need more; `requirements-dev.txt` adds them (see Tests).
 
 For hosting, see [docs/deployment.md](docs/deployment.md). The included Docker
 image runs the frontend and API together and reads the host's `PORT` setting.
@@ -542,8 +545,9 @@ All `/predictions` and `/risk-predictions` routes require `X-API-Key`. Public
 prediction requests need no key. Prediction and administrator routes share a
 per-client rate limit of 60 requests per minute by default.
 
-- The tabular models fill omitted optional measurements with training medians.
-  Each response lists the fields it filled.
+- The tabular models fill omitted optional inputs with a typical training value:
+  the median for measurements, the most common answer for yes/no and category
+  inputs. Each response lists the fields it filled and the values it used.
 - The tabular request schemas reject unknown fields. Sending `cholesterol`
   instead of `chol` returns a 422 response.
 - Tabular risk responses include up to three influential supplied inputs. The

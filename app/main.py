@@ -153,7 +153,12 @@ def health() -> HealthResponse:
 
 @app.get("/ready", tags=["meta"], summary="Deployment readiness")
 def ready() -> JSONResponse:
-    available = all(entry["loaded"] for entry in registry.status().values())
+    if PRELOAD_MODELS:
+        available = all(entry["loaded"] for entry in registry.status().values())
+    else:
+        # Lazy loading reads each artifact on first use, so the service is ready
+        # once every artifact is on disk and none has failed to load.
+        available = registry.loadable()
     return JSONResponse({"ready": available}, status_code=200 if available else 503)
 
 

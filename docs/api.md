@@ -225,8 +225,10 @@ is a 422. So is a field the model does not know. If you send `cholesterol`
 instead of `chol`, you get an error rather than a risk computed with cholesterol
 quietly filled in.
 
-Optional fields you leave out are filled with the training median, the same way
-the model handled missing values during training. The response lists them.
+Optional fields you leave out are filled the same way the model handled missing
+values in training: the median for measurements, the most common answer for
+yes/no and category inputs. `imputed_fields` lists them and `imputed_values`
+gives the value used for each.
 
 ```json
 {
@@ -247,6 +249,7 @@ the model handled missing values during training. The response lists them.
     {"feature": "thalach", "label": "Max heart rate", "value": 115.0, "typical_value": 140.0, "effect": 0.0176}
   ],
   "imputed_fields": ["trestbps", "chol", "fbs", "restecg"],
+  "imputed_values": {"trestbps": 130.0, "chol": 241.0, "fbs": 0.0, "restecg": 0.0},
   "prediction_id": 1,
   "model_metrics": {"chosen_family": "logistic", "test_rows": 184, "roc_auc": 0.8656,
                     "roc_auc_ci95": [0.808, 0.9185], "calibration_ece": 0.04},
