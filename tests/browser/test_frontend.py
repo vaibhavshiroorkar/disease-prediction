@@ -78,7 +78,7 @@ def test_symptom_example_produces_ranked_results(page):
 def test_clinical_forms_submit_measurements_and_explain_results(page, model):
     from playwright.sync_api import expect
 
-    page.get_by_role("button", name=model, exact=True).click()
+    page.get_by_role("tab", name=model).click()
     page.get_by_role("button", name="Use example", exact=True).click()
     page.get_by_role("button", name="Run prediction", exact=True).click()
     expect(page.locator("#results")).to_contain_text("Model estimate")
@@ -96,13 +96,16 @@ def test_malaria_upload_reaches_the_image_model(page):
     ImageDraw.Draw(image).ellipse((10, 10, 110, 110), fill=(200, 150, 150))
     buffer = io.BytesIO()
     image.save(buffer, format="PNG")
-    page.get_by_role("button", name="Malaria", exact=True).click()
+    page.get_by_role("tab", name="Malaria").click()
     page.get_by_label("Blood cell image").set_input_files(
         {"name": "cell.png", "mimeType": "image/png", "buffer": buffer.getvalue()},
     )
     page.get_by_role("button", name="Run prediction", exact=True).click()
     expect(page.locator("#results")).to_contain_text("Model estimate")
     expect(page.locator("#results")).to_contain_text("Single-cell classification")
+    expect(page.locator("#results")).to_contain_text("Your image")
+    # The caption once named the model's target for every image, even uninfected ones.
+    expect(page.locator("#results")).not_to_contain_text("parasitized by")
 
 
 def test_request_error_is_readable_and_the_form_recovers(page):
@@ -122,8 +125,8 @@ def test_mobile_layout_has_no_horizontal_overflow_and_supports_keyboard(page):
     from playwright.sync_api import expect
 
     page.set_viewport_size({"width": 390, "height": 844})
-    page.get_by_role("button", name="Symptoms", exact=True).focus()
-    page.keyboard.press("Tab")
+    page.get_by_role("tab", name="Symptoms").focus()
+    page.keyboard.press("ArrowDown")
     page.keyboard.press("Enter")
     expect(page.get_by_label("Chest pain type")).to_be_visible()
     assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
@@ -137,19 +140,22 @@ def test_clearing_symptoms_does_not_reuse_an_old_result(page):
     result = page.locator("#results").get_by_role("heading", name="Fungal infection", exact=True)
     expect(result).to_be_visible()
     page.get_by_role("button", name="Clear inputs", exact=True).click()
-    expect(page.locator("#results")).to_contain_text("Your results will appear here")
+    expect(page.locator("#results")).to_contain_text("No result yet")
     page.get_by_role("button", name="Run prediction", exact=True).click()
     expect(page.get_by_role("alert")).to_contain_text("Choose at least one symptom")
 
 
-def test_home_hero_leads_to_the_symptom_checker(page, site):
+def test_start_page_lists_checks_and_leads_to_one(page, site):
     from playwright.sync_api import expect
 
     page.goto(site)
-    expect(page.get_by_role("heading", level=1)).to_contain_text("models you can inspect")
-    page.get_by_role("link", name="Try the symptom checker", exact=True).click()
+    expect(page.get_by_role("heading", level=1)).to_have_text("Disease Prediction")
+    expect(page.locator('[data-check="heart"] .score')).to_contain_text("AUC")
+    # Required inputs come from the model, so optional glucose is not listed.
+    expect(page.locator('[data-check="diabetes"] .needs')).not_to_contain_text("Glucose")
+    page.get_by_role("link", name="Symptom checker", exact=True).click()
     expect(page.get_by_role("heading", name="Checks", exact=True)).to_be_focused()
-    expect(page.get_by_role("button", name="Symptoms", exact=True)).to_have_attribute("aria-pressed", "true")
+    expect(page.get_by_role("tab", name="Symptoms")).to_have_attribute("aria-selected", "true")
 
 
 def test_deep_link_opens_a_model_and_the_back_button_returns(page, site):
@@ -157,7 +163,7 @@ def test_deep_link_opens_a_model_and_the_back_button_returns(page, site):
 
     page.goto(f"{site}/#/checks/heart")
     expect(page.get_by_label("Chest pain type")).to_be_visible()
-    page.get_by_role("button", name="Malaria", exact=True).click()
+    page.get_by_role("tab", name="Malaria").click()
     expect(page).to_have_url(f"{site}/#/checks/malaria")
     page.go_back()
     expect(page.get_by_label("Chest pain type")).to_be_visible()
@@ -192,3 +198,42 @@ def test_unknown_address_shows_not_found(page, site):
 
     page.goto(f"{site}/#/nowhere")
     expect(page.get_by_role("heading", name="Page not found")).to_be_visible()
+
+
+def test_symptom_list_is_one_tab_stop_and_flags_urgent_symptoms(page):
+    from playwright.sync_api import expect
+
+    search = page.get_by_role("combobox", name="Search 131 symptoms")
+    search.fill("chest")
+    page.keyboard.press("Enter")
+    expect(page.get_by_role("button", name="Remove Chest pain")).to_be_visible()
+    search.focus()
+    page.keyboard.press("Tab")
+    # Tab leaves the list for the chosen-symptom chip, not the next of 131 options.
+    expect(page.get_by_role("button", name="Remove Chest pain")).to_be_focused()
+    page.get_by_role("button", name="Run prediction", exact=True).click()
+    expect(page.locator("#results")).to_contain_text("Get medical help today")
+    expect(page.locator("#results")).to_contain_text("Too few symptoms")
+
+
+def test_editing_after_a_result_marks_it_out_of_date(page):
+    from playwright.sync_api import expect
+
+    page.get_by_role("tab", name="Heart").click()
+    page.get_by_role("button", name="Use example", exact=True).click()
+    page.get_by_role("button", name="Run prediction", exact=True).click()
+    expect(page.locator("#results")).to_contain_text("Model estimate")
+    page.get_by_label("Age", exact=True).fill("50")
+    expect(page.locator("#results")).to_contain_text("Inputs changed")
+    expect(page.locator("#results")).to_contain_text("Model estimate")
+
+
+def test_blank_yes_no_inputs_say_what_they_were_filled_with(page):
+    from playwright.sync_api import expect
+
+    page.get_by_role("tab", name="Dengue").click()
+    page.get_by_label("Age", exact=True).fill("30")
+    page.get_by_role("group", name="Sex").get_by_role("radio", name="Female").check()
+    page.get_by_role("button", name="Run prediction", exact=True).click()
+    expect(page.locator("#results")).to_contain_text("(most common)")
+    expect(page.locator("#results")).not_to_contain_text("median for")

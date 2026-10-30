@@ -3,15 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Six educational disease prediction tools trained on public medical research data, with their test results published.">
-  <meta name="color-scheme" content="light">
-  <meta name="theme-color" content="#f4f3f8">
-  <title>Pattern | Disease prediction lab</title>
+  <meta name="description" content="Six screening models trained on public medical research data. Each result shows how the model scored on held-out data.">
+  <meta name="color-scheme" content="light dark">
+  <title>Disease Prediction</title>
   <link rel="icon" href="/static/mark.svg" type="image/svg+xml">
   <link rel="preload" href="/static/fonts/atkinson-hyperlegible-next.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="/static/fonts/source-serif-4.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="/static/style.css">
-  <script src="/static/app.js" type="module"></script>
+  <link rel="stylesheet" href="/static/style.css?v=3">
+  <script src="/static/app.js?v=3" type="module"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -19,157 +17,76 @@
   <header class="site-header">
     <div class="page header-inner">
       <a class="brand" href="#/">
-        <img src="/static/mark.svg" alt="" width="30" height="30">
-        <span>Pattern</span>
+        <img src="/static/mark.svg" alt="" width="22" height="22">
+        <span>Disease Prediction</span>
       </a>
-      <button type="button" class="menu-button" aria-expanded="false" aria-controls="site-nav">
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
-        Menu
-      </button>
+      <button type="button" class="menu-button" aria-expanded="false" aria-controls="site-nav">Menu</button>
       <nav id="site-nav" class="site-nav" aria-label="Main">
-        <a href="#/" data-route="home">Home</a>
         <a href="#/checks" data-route="checks">Checks</a>
         <a href="#/models" data-route="models">Models</a>
         <a href="#/about" data-route="about">About</a>
+        <a href="/docs" target="_blank" rel="noreferrer">API</a>
       </nav>
     </div>
   </header>
 
   <main id="main" tabindex="-1">
-    <section class="view" data-view="home" aria-labelledby="home-title">
-      <div class="hero page">
-        <div class="hero-copy">
-          <h1 id="home-title" tabindex="-1">Check symptoms and health risks with models you can inspect.</h1>
-          <p>Six educational tools trained on public medical research data. Every result shows how the
-            model performed on patients it never saw.</p>
-          <div class="hero-actions">
-            <a class="primary-button" href="#/checks/symptom">Try the symptom checker</a>
-            <a class="secondary-button" href="#/models">See how the models were tested</a>
-          </div>
-        </div>
-        <figure class="hero-figure">
-          <svg class="smear" viewBox="0 0 480 480" role="img" aria-labelledby="smear-caption">
-            <defs>
-              <clipPath id="field"><circle cx="240" cy="240" r="218"/></clipPath>
-            </defs>
-            <g clip-path="url(#field)">
-              <rect class="smear-bg" width="480" height="480"/>
-              <g class="rbc">
-                <circle cx="118" cy="128" r="38"/><circle cx="210" cy="92" r="35"/>
-                <circle cx="372" cy="122" r="36"/><circle cx="92" cy="226" r="35"/>
-                <circle cx="196" cy="190" r="37"/><circle cx="402" cy="232" r="35"/>
-                <circle cx="252" cy="292" r="36"/><circle cx="350" cy="318" r="37"/>
-                <circle cx="236" cy="396" r="35"/><circle cx="336" cy="412" r="34"/>
-                <circle cx="428" cy="360" r="33"/><circle cx="58" cy="330" r="31"/>
-                <circle cx="300" cy="40" r="32"/><circle cx="140" cy="420" r="30"/>
-              </g>
-              <g class="rbc-center">
-                <circle cx="118" cy="128" r="15"/><circle cx="210" cy="92" r="14"/>
-                <circle cx="372" cy="122" r="14"/><circle cx="92" cy="226" r="14"/>
-                <circle cx="196" cy="190" r="15"/><circle cx="402" cy="232" r="14"/>
-                <circle cx="252" cy="292" r="14"/><circle cx="350" cy="318" r="15"/>
-                <circle cx="236" cy="396" r="14"/><circle cx="336" cy="412" r="13"/>
-                <circle cx="428" cy="360" r="13"/><circle cx="58" cy="330" r="12"/>
-                <circle cx="300" cy="40" r="13"/><circle cx="140" cy="420" r="12"/>
-              </g>
-              <circle class="wbc" cx="150" cy="318" r="46"/>
-              <path class="nucleus" d="M124 306c6-14 22-16 28-6 6-12 24-10 26 4 2 12-10 18-18 14-4 12-20 16-28 8-10-2-12-12-8-20Z"/>
-              <circle class="rbc-infected" cx="300" cy="200" r="37"/>
-              <circle class="rbc-center" cx="300" cy="200" r="14"/>
-              <circle class="parasite" cx="312" cy="190" r="9"/>
-              <circle class="parasite-dot" cx="318" cy="184" r="3.5"/>
-            </g>
-            <circle class="field-rim" cx="240" cy="240" r="222"/>
-            <circle class="callout-ring" cx="300" cy="200" r="52"/>
-          </svg>
-          <figcaption id="smear-caption">A stained blood smear. The malaria check reads one cell like the
-            marked one and estimates whether it holds a parasite.</figcaption>
-        </figure>
+    <section class="view page" data-view="home" aria-labelledby="home-title">
+      <div class="page-head">
+        <h1 id="home-title" tabindex="-1">Disease Prediction</h1>
+        <p>Six scikit-learn models trained on public medical research data. Every result shows how
+          its model scored on records it never saw in training. For learning, not for diagnosis.</p>
       </div>
 
-      <div class="page home-checks" aria-labelledby="checks-heading">
-        <h2 id="checks-heading">Choose a check</h2>
-        <div class="check-groups">
-          <div class="check-group">
-            <h3>From symptoms</h3>
-            <a class="check-link" href="#/checks/symptom">
-              <strong>Symptom checker</strong>
-              <span>Ranks 41 conditions that share your symptoms.</span>
-              <small>You need: a list of symptoms</small>
-            </a>
-          </div>
-          <div class="check-group">
-            <h3>From clinical measurements</h3>
-            <a class="check-link" href="#/checks/heart">
-              <strong>Heart disease</strong>
-              <span>Chance of a major coronary artery more than half blocked.</span>
-              <small>You need: age, chest pain type, blood pressure, cholesterol, exercise test</small>
-            </a>
-            <a class="check-link" href="#/checks/diabetes">
-              <strong>Diabetes</strong>
-              <span>Chance of a diabetes diagnosis within five years.</span>
-              <small>You need: glucose, BMI, blood pressure, age, pregnancies</small>
-            </a>
-            <a class="check-link" href="#/checks/liver">
-              <strong>Liver disease</strong>
-              <span>Whether a record looks like a liver patient's.</span>
-              <small>You need: age, bilirubin, ALT, AST, albumin</small>
-            </a>
-            <a class="check-link" href="#/checks/dengue">
-              <strong>Dengue severity</strong>
-              <span>Chance a confirmed case develops warning signs or turns severe.</span>
-              <small>You need: a lab-confirmed case, age, days since onset, symptoms</small>
-            </a>
-          </div>
-          <div class="check-group">
-            <h3>From an image</h3>
-            <a class="check-link" href="#/checks/malaria">
-              <strong>Malaria cell</strong>
-              <span>Whether one red blood cell holds a malaria parasite.</span>
-              <small>You need: a cropped image of one stained cell</small>
-            </a>
-          </div>
-        </div>
-      </div>
+      <table class="check-table">
+        <caption class="visually-hidden">Available checks</caption>
+        <thead>
+          <tr><th scope="col">Check</th><th scope="col">Predicts</th><th scope="col">Required inputs</th><th scope="col" class="num">Held-out score</th></tr>
+        </thead>
+        <tbody id="check-rows">
+          <tr data-check="symptom"><th scope="row"><a href="#/checks/symptom">Symptom checker</a></th><td>The 3 closest of 41 conditions</td><td class="needs">A list of symptoms</td><td class="num score"></td></tr>
+          <tr data-check="heart"><th scope="row"><a href="#/checks/heart">Heart disease</a></th><td>A major coronary artery more than half blocked</td><td class="needs"></td><td class="num score"></td></tr>
+          <tr data-check="diabetes"><th scope="row"><a href="#/checks/diabetes">Diabetes</a></th><td>A diabetes diagnosis within five years</td><td class="needs"></td><td class="num score"></td></tr>
+          <tr data-check="liver"><th scope="row"><a href="#/checks/liver">Liver disease</a></th><td>Whether a record looks like a liver patient's</td><td class="needs"></td><td class="num score"></td></tr>
+          <tr data-check="dengue"><th scope="row"><a href="#/checks/dengue">Dengue severity</a></th><td>A confirmed case turning severe or showing warning signs</td><td class="needs"></td><td class="num score"></td></tr>
+          <tr data-check="malaria"><th scope="row"><a href="#/checks/malaria">Malaria cell</a></th><td>A parasite inside one red blood cell</td><td class="needs">One cropped cell image</td><td class="num score"></td></tr>
+        </tbody>
+      </table>
+      <p class="table-note">Held-out score is ROC AUC on the test split: 0.5 is a coin toss, 1.0 is perfect.
+        The symptom checker reports accuracy instead, on clean textbook symptom patterns.
+        <a href="#/models">How each model was tested</a></p>
     </section>
 
     <section class="view page" data-view="checks" aria-labelledby="checks-title" hidden>
-      <div class="view-heading">
+      <div class="page-head page-head--row">
         <h1 id="checks-title" tabindex="-1">Checks</h1>
         <p id="service-status" class="service-status" role="status">Connecting to the models...</p>
       </div>
       <div class="lab">
-        <nav class="rail" aria-labelledby="rail-title">
-          <h2 id="rail-title">Models</h2>
-          <div class="rail-list">
-            <button type="button" data-model="symptom" aria-pressed="true" aria-label="Symptoms">
-              <span class="rail-name">Symptoms</span>
-              <span class="rail-reads">Ranks 41 conditions</span>
+        <div class="rail">
+          <div class="rail-list" role="tablist" aria-label="Models" aria-orientation="vertical">
+            <button type="button" role="tab" id="tab-symptom" data-model="symptom" aria-selected="true" aria-controls="workspace">
+              <span class="rail-name">Symptoms</span><span class="rail-reads">41 conditions</span>
             </button>
-            <button type="button" data-model="heart" aria-pressed="false" aria-label="Heart">
-              <span class="rail-name">Heart</span>
-              <span class="rail-reads">Coronary artery disease</span>
+            <button type="button" role="tab" id="tab-heart" data-model="heart" aria-selected="false" aria-controls="workspace" tabindex="-1">
+              <span class="rail-name">Heart</span><span class="rail-reads">Coronary artery disease</span>
             </button>
-            <button type="button" data-model="diabetes" aria-pressed="false" aria-label="Diabetes">
-              <span class="rail-name">Diabetes</span>
-              <span class="rail-reads">Onset within five years</span>
+            <button type="button" role="tab" id="tab-diabetes" data-model="diabetes" aria-selected="false" aria-controls="workspace" tabindex="-1">
+              <span class="rail-name">Diabetes</span><span class="rail-reads">Onset within five years</span>
             </button>
-            <button type="button" data-model="liver" aria-pressed="false" aria-label="Liver">
-              <span class="rail-name">Liver</span>
-              <span class="rail-reads">Recorded liver patient</span>
+            <button type="button" role="tab" id="tab-liver" data-model="liver" aria-selected="false" aria-controls="workspace" tabindex="-1">
+              <span class="rail-name">Liver</span><span class="rail-reads">Recorded liver patient</span>
             </button>
-            <button type="button" data-model="dengue" aria-pressed="false" aria-label="Dengue">
-              <span class="rail-name">Dengue</span>
-              <span class="rail-reads">Severity of a confirmed case</span>
+            <button type="button" role="tab" id="tab-dengue" data-model="dengue" aria-selected="false" aria-controls="workspace" tabindex="-1">
+              <span class="rail-name">Dengue</span><span class="rail-reads">Confirmed case severity</span>
             </button>
-            <button type="button" data-model="malaria" aria-pressed="false" aria-label="Malaria">
-              <span class="rail-name">Malaria</span>
-              <span class="rail-reads">One blood cell image</span>
+            <button type="button" role="tab" id="tab-malaria" data-model="malaria" aria-selected="false" aria-controls="workspace" tabindex="-1">
+              <span class="rail-name">Malaria</span><span class="rail-reads">One blood cell image</span>
             </button>
           </div>
-        </nav>
+        </div>
 
-        <article id="workspace" class="workspace" aria-labelledby="model-title">
+        <article id="workspace" class="workspace" role="tabpanel" aria-labelledby="model-title">
           <div class="workspace-heading">
             <h2 id="model-title">Rank conditions from symptoms</h2>
             <span id="input-count" class="input-count"></span>
@@ -177,25 +94,25 @@
           <p id="model-description" class="model-description"></p>
           <p id="scope-note" class="scope-note"></p>
           <form id="prediction-form" novalidate>
-            <div id="input-fields" aria-busy="true"><p class="loading-copy">Loading input options...</p></div>
+            <div id="input-fields" aria-busy="true"><p class="loading-copy">Loading inputs...</p></div>
             <p id="form-error" class="form-error" role="alert" hidden></p>
             <div class="form-actions">
-              <button type="submit" id="submit-button" class="primary-button" disabled>Run prediction</button>
-              <button type="button" id="example-button" class="secondary-button">Use example</button>
-              <button type="button" id="clear-button" class="quiet-button">Clear inputs</button>
+              <button type="submit" id="submit-button" class="button button--primary" disabled>Run prediction</button>
+              <button type="button" id="example-button" class="button">Use example</button>
+              <button type="button" id="clear-button" class="button button--quiet">Clear inputs</button>
             </div>
-            <p id="submit-note" class="submit-note">Inputs are sent to the server. Checking logging status...</p>
+            <p id="submit-note" class="submit-note">Checking whether this deployment records inputs...</p>
           </form>
         </article>
 
-        <aside id="results" class="results" aria-label="Prediction results" aria-live="polite" aria-busy="false"></aside>
+        <section id="results" class="results" aria-label="Result" aria-live="polite" aria-busy="false"></section>
       </div>
     </section>
 
     <section class="view page" data-view="models" aria-labelledby="models-title" hidden>
-      <div class="view-heading">
+      <div class="page-head">
         <h1 id="models-title" tabindex="-1">Models</h1>
-        <p>How each model was trained and how it scored on data it never saw.</p>
+        <p>What each model learned from and how it scored on data held out from training.</p>
       </div>
       <nav class="jump-list" aria-label="Models on this page">
         <a href="#/models/symptom">Symptoms</a>
@@ -211,32 +128,33 @@
     </section>
 
     <section class="view page" data-view="about" aria-labelledby="about-title" hidden>
-      <div class="view-heading">
+      <div class="page-head">
         <h1 id="about-title" tabindex="-1">About</h1>
-        <p>An open machine learning project. It shows what these models can and cannot tell you.</p>
+        <p>What a result means, and what these models cannot tell you.</p>
       </div>
       <div class="prose">
         <section aria-labelledby="reading-title">
           <h2 id="reading-title">How to read a result</h2>
-          <p>A risk check gives a score from 0 to 100%. During training, each model picked a cutoff.
-            A score above the cutoff counts as flagged.</p>
-          <p>Each cutoff trades missed cases against false alarms. The dengue model sets its cutoff
-            low so it catches 90 in 100 cases that turn serious. The cost is that only 3 in 100 of its
-            flags turn serious. Every result states these numbers for its own model.</p>
+          <p>A risk check returns a score from 0 to 100%. Each model has a cutoff picked during
+            training. A score at or above it is flagged.</p>
+          <p>Cutoffs trade missed cases against false alarms. Most of these models set theirs low
+            so they miss few real cases, which means many flags turn out to be false alarms. Each
+            result says how often that happened on the test data.</p>
           <p>The symptom checker works differently. It ranks the conditions in its training data that
-            share your symptoms. Its scores compare conditions with each other. They are not the chance
-            that you have one.</p>
+            share your symptoms. Its scores compare those conditions with each other. They are not the
+            chance that you have any of them.</p>
         </section>
         <section aria-labelledby="limits-title">
           <h2 id="limits-title">What the models cannot do</h2>
           <ul>
-            <li>Diagnose anyone. They learned from small public datasets, not from your medical history.</li>
-            <li>Speak for other populations. The diabetes model, for example, only saw Pima women aged 21 and over.</li>
+            <li>Diagnose anyone. They learned from public research datasets, not from your history.</li>
+            <li>Speak for other populations. The diabetes model only saw Pima women aged 21 and over.</li>
             <li>Explain causes. An input that moved a score shows how the model behaves, not what causes disease.</li>
             <li>Read a whole slide or a test strip. The malaria model reads one cropped cell.</li>
           </ul>
-          <p>When you leave an optional measurement blank, the model fills it with the training median.
-            The result lists every value it filled in.</p>
+          <p>When you leave an input blank, the model fills it with a typical training value: the
+            median for measurements, the most common answer for yes/no questions. The result lists
+            every value it filled in.</p>
         </section>
         <section aria-labelledby="privacy-title">
           <h2 id="privacy-title">Privacy</h2>
@@ -246,24 +164,25 @@
           <h2 id="developers-title">For developers</h2>
           <p>Every check is a public API route. The <a href="/docs" target="_blank" rel="noreferrer">API docs</a>
             list them, and <a href="/models" target="_blank" rel="noreferrer">/models</a> returns each model's
-            full evaluation as JSON.</p>
+            full evaluation as JSON. The source is on
+            <a href="https://github.com/vaibhavshiroorkar/disease-prediction" rel="noreferrer">GitHub</a>.</p>
         </section>
       </div>
     </section>
 
     <section class="view page" data-view="missing" aria-labelledby="missing-title" hidden>
-      <div class="view-heading">
+      <div class="page-head">
         <h1 id="missing-title" tabindex="-1">Page not found</h1>
-        <p>That address does not match a page here. <a href="#/">Go to the home page</a>.</p>
+        <p>That address does not match a page here. <a href="#/">Go to the start page</a>.</p>
       </div>
     </section>
   </main>
 
   <footer class="site-footer">
     <div class="page footer-inner">
-      <p><strong>Educational project, not a diagnosis.</strong> If you have chest pain, trouble breathing
-        or other urgent symptoms, call your local emergency number.</p>
-      <p><a href="/docs" target="_blank" rel="noreferrer">API docs</a></p>
+      <p><strong>For learning, not a diagnosis.</strong> If you have chest pain, trouble breathing or
+        other urgent symptoms, call your local emergency number.</p>
+      <p><a href="https://github.com/vaibhavshiroorkar/disease-prediction" rel="noreferrer">Source</a></p>
     </div>
   </footer>
 </body>
