@@ -8,13 +8,25 @@ Finished items move to [CHANGELOG.md](CHANGELOG.md).
   the Render demo, so it was left as your call.
 - After merging, tag the merge commit `v1.1.0` and push the tag.
 
+- Decide whether to download SINAN 2024 (the file is not on disk). It must
+  happen before stage A runs, or the study goes ahead without it.
+
+## State study (in progress)
+
+Protocol: [research/protocol-states.md](research/protocol-states.md).
+
+1. State loader: keep the state code, apply the inclusion rule, list the
+   excluded state-years with counts.
+2. Shift score: source rows against target pool rows, 5-fold AUC.
+3. Runner: stage A, write the EM guard threshold, then stage B. Record the
+   local severe cases in every draw.
+4. Verdicts S1 to S4, the two replications, state-level bootstrap. Tests for
+   each piece.
+5. Run, then write the findings, with commit and data hashes.
+
 ## Research ideas (suggestions, not started)
 
-- **Main path to a paper:** rerun on SINAN by state and year (27 states, 2023
-  to 2025, about 80 targets at most; small states may drop out). Freeze a new protocol first:
-  when does updating hurt, and does a label-free check warn that EM will fail?
-- In the same run, test whether local cases, not patients, predict the repair
-  size, with events on the axis like Yao et al.
+
 - Read Yao et al. 2026, Steyerberg 2004 and Janssen 2008 in full before writing.
 - Find why VA's ranking broke: compare each input's effect there with elsewhere.
 - Larger local samples for the refit, with stronger penalties, to find where it

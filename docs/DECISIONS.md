@@ -1,5 +1,22 @@
 # Decision log
 
+## 2026-11-26: the state study design
+
+- **Decided:** targets are state-years with at least 1,000 confirmed and 100
+  severe cases: 29 from 2023 and 2025. Each state gets a source model trained
+  on the other states in 2023. The EM guard is fitted on 2023 and tested on
+  2025. Protocol: [research/protocol-states.md](research/protocol-states.md).
+- **Why:** below about 50 severe cases per half, the test log loss is too noisy
+  to compare methods. Keeping the guard's threshold away from the targets it
+  is judged on avoids grading it on its own training data.
+- **False, corrected:** "about 80 targets". The 2023 and 2025 files give 54
+  state-years, and only 29 pass the rule. 2024 could add up to 27 more.
+- **Considered:** the five regions again (too few targets), every state-year
+  with any severe case (many have under 10), a fixed national model for all
+  targets (it would have seen each target state).
+- **Would change it:** if 2024 is added, stage B grows. If S3 fails with wide
+  intervals, more years are the fix, not a new hypothesis.
+
 ## 2026-11-25: not a novel research paper yet
 
 - **Decided:** treat 1.1.0 as a solid replication, suitable for a student or

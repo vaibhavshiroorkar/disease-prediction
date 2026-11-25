@@ -4,6 +4,8 @@ Semantic versions, newest first.
 
 ## Unreleased
 
+- Froze the protocol for the state-by-state dengue study before any of its
+  code: 29 targets, four hypotheses, a held-out test of an EM guard.
 - Compared with the closest published work. Withdrew the claim that the local
   sample-size question was new, and recorded what could still make a paper.
 

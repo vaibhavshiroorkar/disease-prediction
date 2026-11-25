@@ -15,6 +15,7 @@ repair it. The answer is in [research/findings.md](research/findings.md).
 |---|---|
 | To run or test it | [README](../README.md) |
 | The question, rules and pass marks | [research/protocol.md](research/protocol.md) |
+| The state-by-state study, frozen before its code | [research/protocol-states.md](research/protocol-states.md) |
 | The results and their limits | [research/findings.md](research/findings.md) |
 | What others found | [research/related-work.md](research/related-work.md) |
 | Each model's data, scores and limits | [model-card.md](model-card.md) |
