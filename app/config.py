@@ -43,7 +43,7 @@ DATABASE_POOL_MIN = int(os.environ.get("DATABASE_POOL_MIN", "1"))
 DATABASE_POOL_MAX = int(os.environ.get("DATABASE_POOL_MAX", "5"))
 
 API_TITLE = "Disease Prediction API"
-API_VERSION = "1.0.0"
+API_VERSION = "1.1.0"
 
 # Returned on every prediction. The model is trained on a small public research
 # dataset and is not a diagnostic device; saying so in the payload means a client

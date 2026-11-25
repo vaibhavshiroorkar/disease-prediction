@@ -117,3 +117,13 @@ def test_site_rate_shortcut_and_within_site_auc() -> None:
     assert rates[1] == 0.0  # site a, fold 0: labels 0 and 0
     p = np.array([0.1, 0.1, 0.1, 0.2, 0.8, 0.9, 0.9, 0.9])
     assert within_site_auc(y, p, sites)["mean"] == pytest.approx(1.0)
+
+
+@pytest.mark.parametrize("spread", [0.5, 1.0, 2.0])
+def test_em_matches_a_direct_likelihood_search(spread) -> None:
+    """Including where EM's assumption is broken and its answer is far from the truth."""
+    p = expit(np.random.default_rng(3).normal(0.8, spread, 2_000))
+    source = 0.5
+    grid = np.linspace(0.0005, 0.9995, 2_000)
+    likelihood = [np.log(g * p / source + (1 - g) * (1 - p) / (1 - source)).sum() for g in grid]
+    assert em_rate(p, source) == pytest.approx(grid[int(np.argmax(likelihood))], abs=0.002)

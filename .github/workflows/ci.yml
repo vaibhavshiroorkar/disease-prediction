@@ -47,8 +47,9 @@ jobs:
           python -m pip install -r requirements-dev.txt
       - name: Check Python and browser code
         run: |
-          ruff check app ml scripts tests
+          ruff check app ml scripts study tests
           node --check app/static/app.js
+          node --check app/static/lab.js
       - name: Run unit and Postgres integration tests
         run: python -m pytest -ra
       - name: Install Chromium

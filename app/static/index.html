@@ -9,7 +9,8 @@
   <link rel="icon" href="/static/mark.svg" type="image/svg+xml">
   <link rel="preload" href="/static/fonts/atkinson-hyperlegible-next.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/static/style.css?v=3">
-  <script src="/static/app.js?v=3" type="module"></script>
+  <link rel="stylesheet" href="/static/lab.css?v=1">
+  <script src="/static/app.js?v=4" type="module"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -24,6 +25,7 @@
       <nav id="site-nav" class="site-nav" aria-label="Main">
         <a href="#/checks" data-route="checks">Checks</a>
         <a href="#/models" data-route="models">Models</a>
+        <a href="#/lab" data-route="lab">Lab</a>
         <a href="#/about" data-route="about">About</a>
         <a href="/docs" target="_blank" rel="noreferrer">API</a>
       </nav>
@@ -124,6 +126,72 @@
       </nav>
       <div id="model-sections" class="model-sections" aria-busy="true">
         <p class="loading-copy">Loading model details...</p>
+      </div>
+    </section>
+
+    <section class="view page" data-view="lab" aria-labelledby="lab-title" hidden>
+      <div class="page-head">
+        <h1 id="lab-title" tabindex="-1">Lab</h1>
+        <p>Move each model's cutoff, then see what happens when a model moves to a place it never saw.</p>
+      </div>
+      <p id="lab-status" class="loading-copy" role="status">Loading the lab...</p>
+      <div id="lab-tip" class="lab-tip" aria-hidden="true" hidden></div>
+      <div id="lab-body" hidden>
+        <section class="lab-section" aria-labelledby="lab-cutoffs">
+          <h2 id="lab-cutoffs">Pick a cutoff</h2>
+          <p>Scored on rows the model never trained on. A lower cutoff catches more cases and raises more
+            false alarms. No cutoff removes both errors.</p>
+          <div class="lab-controls">
+            <label for="lab-model">Model <select id="lab-model"></select></label>
+            <label for="lab-cutoff"><span>Cutoff: <output id="lab-cutoff-value" for="lab-cutoff"></output></span>
+              <input id="lab-cutoff" type="range" min="0" step="1"></label>
+            <label for="lab-prevalence">Condition rate (%)
+              <input id="lab-prevalence" type="number" min="0.1" max="99.9" step="0.1"></label>
+            <button type="button" id="lab-reset" class="button">Reset</button>
+          </div>
+          <div id="lab-tiles" class="lab-tiles" aria-live="polite"></div>
+          <p class="lab-note">Changing the condition rate assumes the share of cases caught and the false alarm rate
+            stay the same in the new place. The study below shows that they often do not.</p>
+          <div id="lab-charts" class="lab-grid"></div>
+          <div class="lab-grid">
+            <div><h3>Families compared</h3><div id="lab-families"></div></div>
+            <div><h3>Inputs that matter most</h3><div id="lab-inputs"></div></div>
+          </div>
+        </section>
+
+        <section class="lab-section" aria-labelledby="lab-move">
+          <h2 id="lab-move">What breaks when a model moves</h2>
+          <p>Ten times, a model was trained without one hospital, region or year, then tested there.
+            A wide gap between the dots means its probabilities were wrong for that place.</p>
+          <div id="lab-rates" class="lab-grid lab-grid--wide"></div>
+          <div id="lab-transfer-table"></div>
+          <p class="lab-note">Switzerland has only 8 patients without disease, so its AUC and slope are not reliable.</p>
+        </section>
+
+        <section class="lab-section" aria-labelledby="lab-repair">
+          <h2 id="lab-repair">How many local patients repair it</h2>
+          <div class="lab-controls"><label for="lab-target">Target <select id="lab-target"></select></label></div>
+          <div id="lab-curves"></div>
+          <div id="lab-curve-table"></div>
+        </section>
+
+        <section class="lab-section" aria-labelledby="lab-results">
+          <h2 id="lab-results">What we predicted, and what happened</h2>
+          <p>The rules were written and committed before the study ran. H1 was partly known by then, so it counts as exploratory.</p>
+          <ul id="lab-verdicts" class="verdicts"></ul>
+        </section>
+
+        <section class="lab-section" aria-labelledby="lab-audits">
+          <h2 id="lab-audits">Could a model cheat?</h2>
+          <p>A pooled score mixes hospitals with different disease rates. Knowing the hospital then earns points
+            without reading the patient. The within-site score compares patients of the same place only.</p>
+          <div id="lab-site-audit"></div>
+          <p>Missing values can give the answer away too. Here a model sees only which values are missing.
+            0.5 means they say nothing.</p>
+          <div id="lab-missing-audit"></div>
+          <p class="lab-note">Protocol, findings and code are in the
+            <a href="https://github.com/vaibhavshiroorkar/disease-prediction" rel="noreferrer">repository</a>.</p>
+        </section>
       </div>
     </section>
 

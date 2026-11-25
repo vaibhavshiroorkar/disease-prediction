@@ -27,6 +27,38 @@ responses use `Cache-Control: no-store`.
 See [deployment settings](deployment.md#environment-variables) to configure
 origins, proxy trust, request limits and optional database logging.
 
+## Request examples
+
+The following request examples use Bash-style quoting. On Windows, you can
+make the same requests through `/docs`.
+
+```bash
+curl -X POST http://localhost:8000/predict/heart \
+  -H "Content-Type: application/json" \
+  -d '{"age": 61, "sex": 1, "cp": 4, "thalach": 115, "exang": 1, "oldpeak": 2.5}'
+```
+
+```bash
+curl --data-binary @cell.png -H "Content-Type: image/png" http://localhost:8000/predict/malaria
+```
+
+```bash
+curl -X POST http://localhost:8000/predict/symptoms \
+  -H "Content-Type: application/json" \
+  -d '{"symptoms": ["itching", "skin_rash", "nodal_skin_eruptions"], "top_k": 3}'
+```
+
+## How inputs are handled
+
+- The tabular models fill omitted optional inputs with a typical training value:
+  the median for measurements, the most common answer for yes/no and category
+  inputs. Each response lists the fields it filled and the values it used.
+- The tabular request schemas reject unknown fields. Sending `cholesterol`
+  instead of `chol` returns a 422 response.
+- Tabular risk responses include up to three influential supplied inputs. The
+  explanation replaces each input with a typical value and measures the change
+  in the score. These are model effects, not evidence of medical causation.
+
 ## GET / and /api
 
 `/` serves the web interface. `/api` returns the service name, version, API
@@ -49,7 +81,7 @@ first.
 ```json
 {
   "status": "ok",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "models": {
     "symptom": {
       "loaded": true,

@@ -53,7 +53,7 @@ def page(site):
     from playwright.sync_api import sync_playwright
 
     with sync_playwright() as playwright:
-        browser = playwright.chromium.launch()
+        browser = playwright.chromium.launch(channel=os.environ.get("BROWSER_CHANNEL"))
         page = browser.new_page()
         errors = []
         page.on("pageerror", lambda error: errors.append(str(error)))
@@ -237,3 +237,30 @@ def test_blank_yes_no_inputs_say_what_they_were_filled_with(page):
     page.get_by_role("button", name="Run prediction", exact=True).click()
     expect(page.locator("#results")).to_contain_text("(most common)")
     expect(page.locator("#results")).not_to_contain_text("median for")
+
+
+def test_lab_cutoff_changes_the_numbers_and_targets_redraw(page, site):
+    from playwright.sync_api import expect
+
+    page.goto(f"{site}/#/lab")
+    tiles = page.locator("#lab-tiles")
+    expect(tiles).to_contain_text("Cases caught")
+    expect(page.locator("#lab-cutoff-value")).to_contain_text("the one this site uses")
+    # The served heart cutoff, from models/heart_summary.json.
+    expect(tiles).to_contain_text("89 of 102")
+    page.locator("#lab-cutoff").focus()
+    page.keyboard.press("Home")
+    expect(tiles).to_contain_text("102 of 102")
+
+    page.locator("#lab-model").select_option("malaria")
+    expect(page.locator("#lab-inputs")).to_contain_text("Not measured")
+    page.locator("#lab-target").select_option("dengue: 2025")
+    expect(page.locator("#lab-curves")).to_contain_text("Year 2025")
+    expect(page.locator("#lab-verdicts li")).to_have_count(5)
+
+
+def test_lab_fits_a_phone(page, site):
+    page.set_viewport_size({"width": 390, "height": 844})
+    page.goto(f"{site}/#/lab")
+    page.locator("#lab-body").wait_for(state="visible")
+    assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")

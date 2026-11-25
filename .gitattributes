@@ -1,0 +1,5 @@
+* text=auto
+*.sh text eol=lf
+.githooks/* text eol=lf
+*.joblib binary
+*.gz binary

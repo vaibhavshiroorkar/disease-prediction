@@ -1,3 +1,5 @@
+import { loadLab } from "./lab.js?v=1";
+
 const $ = (selector) => document.querySelector(selector);
 const fields = $("#input-fields");
 const form = $("#prediction-form");
@@ -929,6 +931,7 @@ const titles = {
   home: "Disease Prediction",
   checks: "Checks | Disease Prediction",
   models: "Models | Disease Prediction",
+  lab: "Lab | Disease Prediction",
   about: "About | Disease Prediction",
   missing: "Page not found | Disease Prediction",
 };
@@ -963,6 +966,7 @@ async function route() {
 
   if (page === "checks") openModel(detail || state.model);
   if (page === "home") fillCheckTable();
+  if (page === "lab") loadLab();
   let target = document.querySelector(`.view[data-view="${page}"] h1`);
   if (page === "models") {
     await loadModels();
