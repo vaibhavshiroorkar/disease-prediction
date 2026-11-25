@@ -1,5 +1,17 @@
 # Decision log
 
+## 2026-11-25: not a novel research paper yet
+
+- **Decided:** treat 1.1.0 as a solid replication, suitable for a student or
+  regional conference if it is framed that way. Do not submit it as novel.
+- **Why:** Yao et al. (1 November 2026) asked the same question with far more
+  data. H1 to H4 confirm known results. See
+  [research/related-work.md](research/related-work.md).
+- **What could make a paper:** SINAN by state and year gives dozens of targets
+  instead of ten. Questions left open there: when does updating hurt, and can a
+  clinic tell in advance that a label-free repair will fail?
+- **Would change it:** a paper that already does this on SINAN.
+
 ## 2026-11-25: study transfer, not a higher score
 
 - **Decided:** the research question is what breaks when a model moves, and how

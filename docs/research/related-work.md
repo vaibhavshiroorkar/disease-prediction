@@ -1,7 +1,7 @@
 # Related work
 
-Checked on 2026-11-25 through search results and abstracts. Full texts were not
-read, so each row says only what the abstract or index showed. "Verified" means
+Checked on 2026-11-25. The first table rests on search results and abstracts.
+The second says how much of each paper was read. Each row says only what that showed. "Verified" means
 the claim appeared there. "Assumed" means it comes from general knowledge.
 
 ## What others found
@@ -23,15 +23,32 @@ Beach as target ([2212.02742](https://arxiv.org/pdf/2212.02742),
 [2506.05047](https://arxiv.org/pdf/2506.05047)). They detect harmful shift. They
 do not measure how many local patients repair it (assumed, from abstracts).
 
+## The closest work, read on the second pass
+
+| Work | What it did | Overlap with this study | Read |
+|---|---|---|---|
+| Yao, Fang and Zhu, preprint posted 1 Nov 2026 ([rs-11054375](https://www.researchsquare.com/article/rs-11054375/v1)) | ICU deterioration, MIMIC-IV (31,054 stays) to eICU (90,393) and NWICU (16,562). Intercept, or intercept and slope, from 20, 50, 100 or 200 local events. Finds miscalibration more consistent than ranking loss, and no universal event count | Very high: the question, two methods, and counting events. Earlier and larger than ours | abstract |
+| Ebrahim, 28 Oct 2026 ([2610.39065](https://arxiv.org/pdf/2610.39065)) | Pre-registered simulation plus four clinical datasets. 500 local rows repaired most rate shift. 100 rows usually made calibration worse | High: small samples hurt, recalibration repairs, rules fixed in advance | key sections |
+| Davis et al., 2019 ([PMC6857513](https://pmc.ncbi.nlm.nih.gov/articles/PMC6857513/)) | A bootstrap test picks no update, intercept, recalibration or refit. 1,000 to 10,000 rows. Small sets favour simple updates | High for H3 and H4 | part |
+| Brown et al., 2025 ([PMC12204302](https://pmc.ncbi.nlm.nih.gov/articles/PMC12204302/)) | Rural hospitals lack the rows to recalibrate: 15,299 to 16,461 needed, 905 to 3,187 available | Same practical question | part |
+| Alexandari et al., 2020 ([1901.06852](https://arxiv.org/abs/1901.06852)) | EM for a changed rate needs a calibrated source model | Explains one way EM fails. Our source models were calibrated and EM still failed | abstract |
+| SINAN severity study (SBC proceedings, linked above) | 700,000 cases, random 85/15 split, no mention of calibration | Same data and nearly the same label. No transfer test | methods |
+| [dengue-risk-prediction](https://github.com/worldofjiayi/dengue-risk-prediction) | 9.45 million SINAN records. Severe against other dengue AUC 0.810 on balanced tests, scores not probabilities | Same data. No transfer or calibration test of its own model | README |
+
+Steyerberg 2004 and Janssen 2008 are the standard early papers on updating.
+Their pages could not be opened, so nothing is claimed from them.
+
 ## What is new here, and what is not
 
-- **Not new:** that this kind of model miscalibrates at these hospitals.
-  Detrano reported it in 1989. H1 confirms it on the current pipeline.
-- **Not new:** the updating methods. All six are standard.
-- **What this project adds:** one fixed protocol over hospitals, regions and a
-  later year, with the smallest local sample that repairs each, and a
-  label-free method in the same comparison. We found no study that does this
-  on SINAN severity. That is a limited search, not proof that none exists.
+- **False, and withdrawn:** that measuring the smallest local sample is this
+  project's addition. Yao et al. did it first, with more data.
+- **Not new:** H1, H2, H3 and H4. They confirm earlier work on other diseases.
+- **Not new:** that small updates can hurt (Ebrahim), or planning by events
+  (Yao). Our 9 to 48 cases is one more data point, seen after the fact.
+- **Possibly new (assumed, limited search):** the first leave-one-region-out
+  and later-year test of SINAN severity models with calibration measured; and
+  EM compared with labelled updates on the same clinical targets, where it
+  failed on 7 of 10 even though the source models were calibrated.
 
 ## Choices the literature settled
 

@@ -10,15 +10,17 @@ Finished items move to [CHANGELOG.md](CHANGELOG.md).
 
 ## Research ideas (suggestions, not started)
 
-- Test whether the number of local cases, not patients, predicts the repair
-  size. Needs new targets, since this idea came from these results.
+- **Main path to a paper:** rerun on SINAN by state and year (27 states, 2023
+  to 2025, about 80 targets at most; small states may drop out). Freeze a new protocol first:
+  when does updating hurt, and does a label-free check warn that EM will fail?
+- In the same run, test whether local cases, not patients, predict the repair
+  size, with events on the axis like Yao et al.
+- Read Yao et al. 2026, Steyerberg 2004 and Janssen 2008 in full before writing.
 - Find why VA's ranking broke: compare each input's effect there with elsewhere.
 - Larger local samples for the refit, with stronger penalties, to find where it
   passes the shift.
 - Measure how much the imputed cholesterol still gives away the hospital.
 - A second malaria source, so that model can have a transfer test.
-- Read the full papers in [related work](research/related-work.md). Only
-  abstracts were read.
 
 ## Engineering
 

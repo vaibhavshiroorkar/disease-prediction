@@ -62,7 +62,8 @@ Smallest n where the shift helps in at least 90% of draws, there and above:
 
 The patient counts differ 250-fold but the cases stay between 9 and 48.
 Counting cases may be the better way to plan a sample. This was seen after the
-run, so it is a hypothesis for the next study and not a tested result.
+run, so it is not a tested result. Yao et al. (2026) already plan by events and
+found no universal count. See [related-work.md](related-work.md).
 
 Small samples also hurt. At the smallest n the shift made log loss worse on
 average in 8 of 10 targets. The smaller the original error, the more data it

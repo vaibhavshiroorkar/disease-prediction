@@ -4,7 +4,8 @@ Semantic versions, newest first.
 
 ## Unreleased
 
-Nothing yet.
+- Compared with the closest published work. Withdrew the claim that the local
+  sample-size question was new, and recorded what could still make a paper.
 
 ## 1.1.0 (2026-11-25)
 
