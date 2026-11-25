@@ -16,7 +16,7 @@ the claim appeared there. "Assumed" means it comes from general knowledge.
 | Saerens et al., 2002, *Neural Computation* 14:21-41 | EM estimates a new class rate from unlabelled data | verified ([record](https://mlanthology.org/neco/2002/saerens2002neco-adjusting)) |
 | Saerens et al., the assumption behind it | It holds only if the inputs look the same within each class in both places | assumed: it follows from the derivation, which we did not read. `tests/test_study.py` checks our version where the assumption holds |
 | Snell et al., 2021 | Precise calibration estimates often need more than 200 events and 200 non-events | verified ([PMC8352630](https://pmc.ncbi.nlm.nih.gov/articles/PMC8352630)) |
-| Severe dengue from SINAN without lab data (SBC proceedings) | A random forest classified severity from non-lab fields | verified that it exists ([paper](https://sol.sbc.org.br/index.php/sbcas/article/download/42790/42557/)); its split is unknown |
+| Severe dengue from SINAN without lab data (SBC proceedings) | A random forest classified severity from non-lab fields | verified that it exists ([paper](https://sol.sbc.org.br/index.php/sbcas/article/download/42790/42557/)); random 85/15 split, see below |
 
 Two arXiv papers use Cleveland and Hungary as source and Switzerland and Long
 Beach as target ([2212.02742](https://arxiv.org/pdf/2212.02742),
@@ -31,7 +31,7 @@ do not measure how many local patients repair it (assumed, from abstracts).
 | Ebrahim, 28 Oct 2026 ([2610.39065](https://arxiv.org/pdf/2610.39065)) | Pre-registered simulation plus four clinical datasets. 500 local rows repaired most rate shift. 100 rows usually made calibration worse | High: small samples hurt, recalibration repairs, rules fixed in advance | key sections |
 | Davis et al., 2019 ([PMC6857513](https://pmc.ncbi.nlm.nih.gov/articles/PMC6857513/)) | A bootstrap test picks no update, intercept, recalibration or refit. 1,000 to 10,000 rows. Small sets favour simple updates | High for H3 and H4 | part |
 | Brown et al., 2025 ([PMC12204302](https://pmc.ncbi.nlm.nih.gov/articles/PMC12204302/)) | Rural hospitals lack the rows to recalibrate: 15,299 to 16,461 needed, 905 to 3,187 available | Same practical question | part |
-| Alexandari et al., 2020 ([1901.06852](https://arxiv.org/abs/1901.06852)) | EM for a changed rate needs a calibrated source model | Explains one way EM fails. Our source models were calibrated and EM still failed | abstract |
+| Alexandari et al., 2020 ([1901.06852](https://arxiv.org/abs/1901.06852)) | EM for a changed rate needs a calibrated source model | Explains one way EM fails. Our sources were sigmoid-calibrated, and EM recovered their own rate in the 3 we checked, yet it failed on targets | abstract |
 | SINAN severity study (SBC proceedings, linked above) | 700,000 cases, random 85/15 split, no mention of calibration | Same data and nearly the same label. No transfer test | methods |
 | [dengue-risk-prediction](https://github.com/worldofjiayi/dengue-risk-prediction) | 9.45 million SINAN records. Severe against other dengue AUC 0.810 on balanced tests, scores not probabilities | Same data. No transfer or calibration test of its own model | README |
 
@@ -48,7 +48,7 @@ Their pages could not be opened, so nothing is claimed from them.
 - **Possibly new (assumed, limited search):** the first leave-one-region-out
   and later-year test of SINAN severity models with calibration measured; and
   EM compared with labelled updates on the same clinical targets, where it
-  failed on 7 of 10 even though the source models were calibrated.
+  failed on 7 of 10 although the source models were sigmoid-calibrated.
 
 ## Choices the literature settled
 
