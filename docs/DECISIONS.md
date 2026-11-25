@@ -14,7 +14,9 @@
 - **Considered:** the five regions again (too few targets), every state-year
   with any severe case (many have under 10), a fixed national model for all
   targets (it would have seen each target state).
-- **Would change it:** if 2024 is added, stage B grows. If S3 fails with wide
+- **Update, same day:** 2024 was downloaded before any study code. It adds
+  18 targets: 47 in all, 33 in stage B.
+- **Would change it:** if S3 fails with wide
   intervals, more years are the fix, not a new hypothesis.
 
 ## 2026-11-25: not a novel research paper yet

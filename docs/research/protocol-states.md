@@ -132,3 +132,15 @@ luck of the draw within a target only.
 ## Deviations
 
 None yet.
+
+## Recorded before stage A
+
+- 2026-11-26: the 2024 file was downloaded before any study code, as the
+  section on 2024 allows. Under the inclusion rule it adds 18 targets, so
+  stage B has 33 (18 from 2024, 15 from 2025) and the study has 47. S3 and S4
+  use all of them. Files used, by SHA-256:
+  - 2023: `9a376a7be58b3c0e84bfac82474515f407fd7f135eae19660515428e6ccc0b9c`
+  - 2024: `1b6b7bf7f6b1fdab4ed2314edc2f57919c33b8103988383f22b7d4776c4a931a`
+  - 2025: `dbe3597d384ee2588c1bf38205cdabd681aec97df363a48dc2d1e0dd198ecc63`
+- The 2024 file holds 6,564,924 notifications and 2,197,313 lab-confirmed
+  cases, about three times 2023. Only label counts per state were looked at.

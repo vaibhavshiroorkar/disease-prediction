@@ -8,8 +8,6 @@ Finished items move to [CHANGELOG.md](CHANGELOG.md).
   the Render demo, so it was left as your call.
 - After merging, tag the merge commit `v1.1.0` and push the tag.
 
-- Decide whether to download SINAN 2024 (the file is not on disk). It must
-  happen before stage A runs, or the study goes ahead without it.
 
 ## State study (in progress)
 

@@ -5,7 +5,9 @@ Semantic versions, newest first.
 ## Unreleased
 
 - Froze the protocol for the state-by-state dengue study before any of its
-  code: 29 targets, four hypotheses, a held-out test of an EM guard.
+  code: four hypotheses and a held-out test of an EM guard.
+- Added SINAN 2024 as a study-only download (187 MB). With it the state study
+  has 47 targets. The served model still uses 2023 and 2025 only.
 - Compared with the closest published work. Withdrew the claim that the local
   sample-size question was new, and recorded what could still make a paper.
 

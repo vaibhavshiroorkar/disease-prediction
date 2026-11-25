@@ -23,6 +23,9 @@ HEART_SITES = ("cleveland", "hungarian", "switzerland", "va")
 # The dengue model trains on the first year and is checked on the second. Two
 # separate epidemics are a harder test than a random split of one.
 DENGUE_YEARS = (2023, 2025)
+# The state study (docs/research/protocol-states.md) also uses 2024. The served
+# model does not.
+DENGUE_STUDY_YEARS = (2023, 2024, 2025)
 
 
 @dataclass(frozen=True)
@@ -95,10 +98,10 @@ SOURCES: dict[str, Source] = {
                 filename=f"dengue_sinan_{year}.csv.zip",
                 description=(
                     f"Brazil's national dengue notification register (SINAN), {year}. One row per "
-                    "reported case, about 40 MB zipped. Published by the Ministry of Health on OpenDataSUS."
+                    "reported case. Published by the Ministry of Health on OpenDataSUS."
                 ),
             )
-            for year in DENGUE_YEARS
+            for year in DENGUE_STUDY_YEARS
         ],
         Source(
             key="malaria_cells",
