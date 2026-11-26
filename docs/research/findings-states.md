@@ -98,8 +98,13 @@ These are hypotheses for a next study. They were not frozen in advance.
 
 ## Is this a paper now?
 
-It is closer. Of the 47-target results, the clearest new one is negative and
-pre-registered: on SINAN dengue severity, label-free EM hurt in 87% of new
-state-years, and a covariate-shift score gave no warning. That needs a full
-literature check before it is called new. The two post-hoc patterns need a
-fresh frozen test, for example on 2026 data when it is published.
+It is closer. The literature check (see [related-work.md](related-work.md))
+found that EM failing under input shift is expected and has been shown on
+images. What remains is narrower. It is a pre-registered measurement on
+tabular clinical data with natural shift: EM hurt in 87% of new state-years,
+and a covariate-shift score gave no warning. That suits a workshop or student
+venue as a negative result, not a journal as a new method (assumed, not
+checked against any venue's criteria). Two things would strengthen it: a
+correction with the true local rate (does the estimate fail, or the
+correction?), and a fresh frozen test of the two post-hoc patterns, for
+example on 2026 data when it is published.

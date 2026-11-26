@@ -38,6 +38,22 @@ do not measure how many local patients repair it (assumed, from abstracts).
 Steyerberg 2004 and Janssen 2008 are the standard early papers on updating.
 Their pages could not be opened, so nothing is claimed from them.
 
+## Label-shift work, checked for the state study (2026-11-26)
+
+The question: has a label-free rate correction such as EM been tested on many
+real clinical shifts, and has anyone predicted where it fails?
+
+| Work | What it did | Bearing on our result | Read |
+|---|---|---|---|
+| Esuli, Molinari and Sebastiani, *ACM TOIS*, 2021 ([record](https://iris.cnr.it/handle/20.500.14243/420688)) | Reassessed EM (they call it SLD) on text data | EM helps only with few classes and a calibrated classifier, and otherwise hurts. Ours had two classes and calibrated sources, yet it hurt, so calibration alone does not explain our failures | search summary |
+| Godau et al., arXiv 2023, *Medical Image Analysis* 2025 ([2303.12540](https://arxiv.org/abs/2303.12540)) | 30 medical image tasks. Rate correction improved calibration | The shifts were made by resampling one test set, so inputs within a class could not change. They used the true rates with noise, not a label-free estimate | method and results sections |
+| Roschewitz, Mehta, Jones and Glocker, arXiv 2024 ([2411.07940](https://arxiv.org/abs/2411.07940)) | Images from 4 datasets, mixes of real scanners and sites. Tells rate shift from input shift with two tests | A label-free rate correction made calibration "much worse" once inputs also shifted. Same mechanism as ours, shown in plots, on images. They do not claim their tests predict whether the correction will help | full text |
+| Chandra H, Shivhare and Sahu, Research Square preprint, July 2026 ([rs-10254564](https://www.researchsquare.com/article/rs-10254564/v1)) | MIMIC-IV to 185 eICU hospitals. A rate correction cut mean calibration error from 0.071-0.085 to 0.027-0.037 | It used each hospital's true mortality rate, not an estimate from unlabelled predictions. So knowing the rate fixed most of the error there. Estimating it was not tested | abstract |
+| Garg et al., NeurIPS 2020 ([2003.07554](https://arxiv.org/abs/2003.07554)) | EM (MLLS) with calibration beats BBSE under pure rate shift | Benchmarks on simulated rate shift only | search summary |
+
+Not read: the full text of Esuli et al. and of Chandra H et al. (the PDF could
+not be turned into text here).
+
 ## What is new here, and what is not
 
 - **False, and withdrawn:** that measuring the smallest local sample is this
@@ -51,8 +67,19 @@ Their pages could not be opened, so nothing is claimed from them.
   failed on 7 of 10 although the source models were sigmoid-calibrated. The
   state study repeated this at scale: EM failed on 41 of 47 state-years, and
   a covariate-shift score did not predict where
-  ([findings-states.md](findings-states.md)). Not yet checked against the
-  label-shift literature.
+  ([findings-states.md](findings-states.md)).
+- **Not new, checked 2026-11-26:** that EM can fail when inputs shift as well
+  as rates. It follows from EM's assumption, and Roschewitz et al. (2024)
+  showed it on images.
+- **Possibly new after that check (assumed, one day of searching):** the
+  size of the failure on tabular clinical data with natural shift (41 of 47
+  state-years, paired against labelled updates), and the negative result that
+  a domain-classifier score did not predict where EM fails. Roschewitz et al.
+  identify the type of shift but do not test whether that predicts the
+  correction's success. Chandra H et al. suggest that the true rate repairs
+  most of the error. If that holds here too, EM fails because its rate
+  estimate is wrong, not because rate correction is wrong. We have not tested
+  that.
 
 ## Choices the literature settled
 

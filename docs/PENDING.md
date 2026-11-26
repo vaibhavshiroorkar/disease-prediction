@@ -13,9 +13,10 @@ Finished items move to [CHANGELOG.md](CHANGELOG.md).
 
 [Findings](research/findings-states.md).
 
-- Literature check before calling anything new: has EM, or another
-  label-shift method, been tested on many real clinical targets and failed
-  this often?
+- Correct with each target's true rate, as Chandra H et al. (2026) did. If
+  that repairs most targets, EM fails at estimating the rate, not at
+  correcting it. Needs the source models refitted (about 20 minutes).
+- Read Chandra H et al. 2026 and Esuli et al. 2021 in full.
 - A frozen test of the two post-hoc patterns (repair only pays outside an
   observed over expected band; EM only helps when the ratio passes 2), on new
   data such as SINAN 2026 once it is published.

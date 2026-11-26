@@ -15,6 +15,9 @@ Semantic versions, newest first.
 - Ran the state study (47 targets, 20 minutes). S1 and both replications
   passed. S2, S3 and S4 did not. EM hurt in 41 of 47. Findings, exploratory
   checks (`study/explore_states.py`) and results committed.
+- Checked the label-shift literature. EM failing under input shift is not
+  new (Roschewitz et al. 2024). The scale on clinical data and the failed
+  warning score may be.
 - Compared with the closest published work. Withdrew the claim that the local
   sample-size question was new, and recorded what could still make a paper.
 
