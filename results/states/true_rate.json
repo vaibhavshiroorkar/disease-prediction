@@ -1,0 +1,697 @@
+{
+ "provenance": {
+  "commit": "1196e55467c8878d5be337ca6bf95bce20b40832",
+  "uncommitted_code": false,
+  "seed": 42,
+  "python": "3.13.12",
+  "scikit_learn": "1.9.0",
+  "numpy": "2.5.2",
+  "pandas": "3.0.5",
+  "data_sha256": {
+   "heart_cleveland.data": "a74b7efa387bc9d108d7d0115d831fe9b414b29ae7124f331b622b4efa0427c8",
+   "heart_hungarian.data": "d1ad108f785768cd3d7e82dc522e6f5a61eea93cccfb3a46ee8076f73fc3d796",
+   "heart_switzerland.data": "834a405ccf5b66ab4056bb77794adc8df0b7125186454c0a1d002d33c6c3b314",
+   "heart_va.data": "e7c93d8d0d2acdadfa4c5e8de768e2191e7f618b952e29623f1f0d5949ff6b8f",
+   "pima_diabetes.csv": "6bfe5d0f379d17a0e0819b996407e3c09bf80febd4287f2ed212190dfff154af",
+   "ilpd_liver.csv": "84feac16488de5cf89bd22bd802c77f25841fe93e9ddd32355683e94d46c3425",
+   "dengue_sinan_2023.csv.zip": "9a376a7be58b3c0e84bfac82474515f407fd7f135eae19660515428e6ccc0b9c",
+   "dengue_sinan_2024.csv.zip": "1b6b7bf7f6b1fdab4ed2314edc2f57919c33b8103988383f22b7d4776c4a931a",
+   "dengue_sinan_2025.csv.zip": "dbe3597d384ee2588c1bf38205cdabd681aec97df363a48dc2d1e0dd198ecc63"
+  },
+  "run_at": "2026-11-26T11:18:34+00:00",
+  "seconds": 340
+ },
+ "commit_of_results": "54acac72e85420e01606a7d1612595f3087198e1",
+ "summary": {
+  "targets": 47,
+  "em_hurt": 41,
+  "true_prior_helped_where_em_hurt": 34,
+  "true_mean_helped_where_em_hurt": 40,
+  "helped_of_all": {
+   "em": 6,
+   "true_prior": 40,
+   "true_mean": 46
+  },
+  "answer": "the estimate failed"
+ },
+ "targets": [
+  {
+   "name": "RO 2023",
+   "n": 2500,
+   "observed_over_expected": 0.839,
+   "source_rate": 0.02414,
+   "true_rate": 0.01861,
+   "mean_predicted": 0.02218,
+   "em_rate_median": 0.0,
+   "change_from_none": {
+    "em": 0.09894,
+    "true_prior": -0.00027,
+    "true_mean": -0.00031
+   }
+  },
+  {
+   "name": "PA 2024",
+   "n": 2500,
+   "observed_over_expected": 0.8704,
+   "source_rate": 0.02413,
+   "true_rate": 0.02417,
+   "mean_predicted": 0.02777,
+   "em_rate_median": 0.11564,
+   "change_from_none": {
+    "em": 0.06685,
+    "true_prior": 1e-05,
+    "true_mean": -0.00024
+   }
+  },
+  {
+   "name": "PA 2025",
+   "n": 2500,
+   "observed_over_expected": 1.3438,
+   "source_rate": 0.02413,
+   "true_rate": 0.03582,
+   "mean_predicted": 0.02666,
+   "em_rate_median": 0.09102,
+   "change_from_none": {
+    "em": 0.02465,
+    "true_prior": -0.0015,
+    "true_mean": -0.00158
+   }
+  },
+  {
+   "name": "AP 2024",
+   "n": 1000,
+   "observed_over_expected": 2.1702,
+   "source_rate": 0.02408,
+   "true_rate": 0.05498,
+   "mean_predicted": 0.02534,
+   "em_rate_median": 0.06288,
+   "change_from_none": {
+    "em": -0.00163,
+    "true_prior": -0.01429,
+    "true_mean": -0.01426
+   }
+  },
+  {
+   "name": "MA 2024",
+   "n": 1000,
+   "observed_over_expected": 2.189,
+   "source_rate": 0.02402,
+   "true_rate": 0.05853,
+   "mean_predicted": 0.02674,
+   "em_rate_median": 0.12562,
+   "change_from_none": {
+    "em": 0.00917,
+    "true_prior": -0.01566,
+    "true_mean": -0.01564
+   }
+  },
+  {
+   "name": "MA 2025",
+   "n": 500,
+   "observed_over_expected": 2.5461,
+   "source_rate": 0.02402,
+   "true_rate": 0.07117,
+   "mean_predicted": 0.02795,
+   "em_rate_median": 0.13794,
+   "change_from_none": {
+    "em": 0.00285,
+    "true_prior": -0.02597,
+    "true_mean": -0.02609
+   }
+  },
+  {
+   "name": "PI 2024",
+   "n": 1000,
+   "observed_over_expected": 2.2044,
+   "source_rate": 0.02404,
+   "true_rate": 0.06166,
+   "mean_predicted": 0.02797,
+   "em_rate_median": 0.09342,
+   "change_from_none": {
+    "em": -0.00913,
+    "true_prior": -0.01743,
+    "true_mean": -0.01748
+   }
+  },
+  {
+   "name": "PI 2025",
+   "n": 500,
+   "observed_over_expected": 2.4932,
+   "source_rate": 0.02404,
+   "true_rate": 0.08792,
+   "mean_predicted": 0.03526,
+   "em_rate_median": 0.27469,
+   "change_from_none": {
+    "em": 0.10035,
+    "true_prior": -0.02965,
+    "true_mean": -0.03222
+   }
+  },
+  {
+   "name": "CE 2023",
+   "n": 2500,
+   "observed_over_expected": 0.6694,
+   "source_rate": 0.02414,
+   "true_rate": 0.0187,
+   "mean_predicted": 0.02793,
+   "em_rate_median": 0.10691,
+   "change_from_none": {
+    "em": 0.06413,
+    "true_prior": -0.00157,
+    "true_mean": -0.00182
+   }
+  },
+  {
+   "name": "CE 2024",
+   "n": 2500,
+   "observed_over_expected": 0.9445,
+   "source_rate": 0.02414,
+   "true_rate": 0.02834,
+   "mean_predicted": 0.03001,
+   "em_rate_median": 0.18532,
+   "change_from_none": {
+    "em": 0.13049,
+    "true_prior": 0.00067,
+    "true_mean": -3e-05
+   }
+  },
+  {
+   "name": "PE 2025",
+   "n": 1000,
+   "observed_over_expected": 1.2612,
+   "source_rate": 0.02406,
+   "true_rate": 0.04847,
+   "mean_predicted": 0.03843,
+   "em_rate_median": 0.41067,
+   "change_from_none": {
+    "em": 0.42081,
+    "true_prior": 0.00344,
+    "true_mean": -0.00132
+   }
+  },
+  {
+   "name": "AL 2024",
+   "n": 2500,
+   "observed_over_expected": 2.0284,
+   "source_rate": 0.02404,
+   "true_rate": 0.06566,
+   "mean_predicted": 0.03237,
+   "em_rate_median": 0.24116,
+   "change_from_none": {
+    "em": 0.11201,
+    "true_prior": -0.01342,
+    "true_mean": -0.01496
+   }
+  },
+  {
+   "name": "BA 2023",
+   "n": 2500,
+   "observed_over_expected": 1.8828,
+   "source_rate": 0.02302,
+   "true_rate": 0.07612,
+   "mean_predicted": 0.04043,
+   "em_rate_median": 0.42342,
+   "change_from_none": {
+    "em": 0.35754,
+    "true_prior": -0.00703,
+    "true_mean": -0.01492
+   }
+  },
+  {
+   "name": "BA 2024",
+   "n": 2500,
+   "observed_over_expected": 2.4559,
+   "source_rate": 0.02302,
+   "true_rate": 0.06458,
+   "mean_predicted": 0.02629,
+   "em_rate_median": 0.1009,
+   "change_from_none": {
+    "em": -0.01195,
+    "true_prior": -0.02207,
+    "true_mean": -0.02215
+   }
+  },
+  {
+   "name": "BA 2025",
+   "n": 2500,
+   "observed_over_expected": 2.5871,
+   "source_rate": 0.02302,
+   "true_rate": 0.08019,
+   "mean_predicted": 0.031,
+   "em_rate_median": 0.22047,
+   "change_from_none": {
+    "em": 0.05192,
+    "true_prior": -0.02998,
+    "true_mean": -0.03124
+   }
+  },
+  {
+   "name": "MG 2023",
+   "n": 2500,
+   "observed_over_expected": 0.455,
+   "source_rate": 0.02654,
+   "true_rate": 0.01142,
+   "mean_predicted": 0.0251,
+   "em_rate_median": 0.00035,
+   "change_from_none": {
+    "em": 0.04253,
+    "true_prior": -0.00495,
+    "true_mean": -0.00496
+   }
+  },
+  {
+   "name": "MG 2024",
+   "n": 2500,
+   "observed_over_expected": 0.7271,
+   "source_rate": 0.02654,
+   "true_rate": 0.01741,
+   "mean_predicted": 0.02394,
+   "em_rate_median": 0.0,
+   "change_from_none": {
+    "em": 0.1223,
+    "true_prior": -0.001,
+    "true_mean": -0.00106
+   }
+  },
+  {
+   "name": "MG 2025",
+   "n": 2500,
+   "observed_over_expected": 1.0488,
+   "source_rate": 0.02654,
+   "true_rate": 0.02992,
+   "mean_predicted": 0.02853,
+   "em_rate_median": 0.06331,
+   "change_from_none": {
+    "em": 0.01393,
+    "true_prior": 3e-05,
+    "true_mean": -3e-05
+   }
+  },
+  {
+   "name": "ES 2023",
+   "n": 2500,
+   "observed_over_expected": 1.809,
+   "source_rate": 0.02301,
+   "true_rate": 0.04201,
+   "mean_predicted": 0.02322,
+   "em_rate_median": 0.02139,
+   "change_from_none": {
+    "em": 0.01634,
+    "true_prior": -0.00665,
+    "true_mean": -0.00667
+   }
+  },
+  {
+   "name": "ES 2024",
+   "n": 2500,
+   "observed_over_expected": 1.5586,
+   "source_rate": 0.02301,
+   "true_rate": 0.03157,
+   "mean_predicted": 0.02025,
+   "em_rate_median": 0.0,
+   "change_from_none": {
+    "em": 0.28261,
+    "true_prior": -0.00258,
+    "true_mean": -0.00291
+   }
+  },
+  {
+   "name": "ES 2025",
+   "n": 1000,
+   "observed_over_expected": 2.559,
+   "source_rate": 0.02301,
+   "true_rate": 0.06669,
+   "mean_predicted": 0.02606,
+   "em_rate_median": 0.08966,
+   "change_from_none": {
+    "em": -0.01932,
+    "true_prior": -0.02451,
+    "true_mean": -0.02453
+   }
+  },
+  {
+   "name": "RJ 2023",
+   "n": 2500,
+   "observed_over_expected": 1.415,
+   "source_rate": 0.02331,
+   "true_rate": 0.04112,
+   "mean_predicted": 0.02906,
+   "em_rate_median": 0.14388,
+   "change_from_none": {
+    "em": 0.06375,
+    "true_prior": -0.00181,
+    "true_mean": -0.0025
+   }
+  },
+  {
+   "name": "RJ 2024",
+   "n": 2500,
+   "observed_over_expected": 1.3861,
+   "source_rate": 0.02331,
+   "true_rate": 0.04069,
+   "mean_predicted": 0.02936,
+   "em_rate_median": 0.15883,
+   "change_from_none": {
+    "em": 0.08104,
+    "true_prior": -0.0014,
+    "true_mean": -0.00219
+   }
+  },
+  {
+   "name": "RJ 2025",
+   "n": 2500,
+   "observed_over_expected": 1.443,
+   "source_rate": 0.02331,
+   "true_rate": 0.04383,
+   "mean_predicted": 0.03037,
+   "em_rate_median": 0.20485,
+   "change_from_none": {
+    "em": 0.11974,
+    "true_prior": -0.00176,
+    "true_mean": -0.00291
+   }
+  },
+  {
+   "name": "SP 2023",
+   "n": 2500,
+   "observed_over_expected": 0.5847,
+   "source_rate": 0.02749,
+   "true_rate": 0.01624,
+   "mean_predicted": 0.02778,
+   "em_rate_median": 0.03039,
+   "change_from_none": {
+    "em": 0.00352,
+    "true_prior": -0.00305,
+    "true_mean": -0.00307
+   }
+  },
+  {
+   "name": "SP 2024",
+   "n": 2500,
+   "observed_over_expected": 0.5354,
+   "source_rate": 0.02749,
+   "true_rate": 0.01457,
+   "mean_predicted": 0.02721,
+   "em_rate_median": 0.02321,
+   "change_from_none": {
+    "em": 0.00598,
+    "true_prior": -0.00381,
+    "true_mean": -0.00381
+   }
+  },
+  {
+   "name": "SP 2025",
+   "n": 2500,
+   "observed_over_expected": 1.3887,
+   "source_rate": 0.02749,
+   "true_rate": 0.03981,
+   "mean_predicted": 0.02867,
+   "em_rate_median": 0.04731,
+   "change_from_none": {
+    "em": 0.00055,
+    "true_prior": -0.00214,
+    "true_mean": -0.00214
+   }
+  },
+  {
+   "name": "PR 2023",
+   "n": 2500,
+   "observed_over_expected": 1.4166,
+   "source_rate": 0.02335,
+   "true_rate": 0.03315,
+   "mean_predicted": 0.0234,
+   "em_rate_median": 0.02345,
+   "change_from_none": {
+    "em": 0.01148,
+    "true_prior": -0.00196,
+    "true_mean": -0.00196
+   }
+  },
+  {
+   "name": "PR 2024",
+   "n": 2500,
+   "observed_over_expected": 2.0145,
+   "source_rate": 0.02335,
+   "true_rate": 0.04495,
+   "mean_predicted": 0.02232,
+   "em_rate_median": 0.00658,
+   "change_from_none": {
+    "em": 0.12133,
+    "true_prior": -0.00952,
+    "true_mean": -0.00971
+   }
+  },
+  {
+   "name": "PR 2025",
+   "n": 2500,
+   "observed_over_expected": 2.4324,
+   "source_rate": 0.02335,
+   "true_rate": 0.06042,
+   "mean_predicted": 0.02484,
+   "em_rate_median": 0.053,
+   "change_from_none": {
+    "em": -0.01783,
+    "true_prior": -0.02038,
+    "true_mean": -0.02039
+   }
+  },
+  {
+   "name": "SC 2023",
+   "n": 2500,
+   "observed_over_expected": 2.3774,
+   "source_rate": 0.02179,
+   "true_rate": 0.04091,
+   "mean_predicted": 0.01721,
+   "em_rate_median": 0.0,
+   "change_from_none": {
+    "em": 0.37688,
+    "true_prior": -0.01125,
+    "true_mean": -0.01278
+   }
+  },
+  {
+   "name": "SC 2024",
+   "n": 2500,
+   "observed_over_expected": 1.5393,
+   "source_rate": 0.02179,
+   "true_rate": 0.02814,
+   "mean_predicted": 0.01828,
+   "em_rate_median": 0.0,
+   "change_from_none": {
+    "em": 0.2518,
+    "true_prior": -0.00195,
+    "true_mean": -0.00246
+   }
+  },
+  {
+   "name": "SC 2025",
+   "n": 2500,
+   "observed_over_expected": 1.1165,
+   "source_rate": 0.02179,
+   "true_rate": 0.01847,
+   "mean_predicted": 0.01655,
+   "em_rate_median": 0.0,
+   "change_from_none": {
+    "em": 0.16236,
+    "true_prior": 0.00053,
+    "true_mean": -0.00011
+   }
+  },
+  {
+   "name": "RS 2023",
+   "n": 2500,
+   "observed_over_expected": 0.653,
+   "source_rate": 0.02436,
+   "true_rate": 0.01745,
+   "mean_predicted": 0.02672,
+   "em_rate_median": 0.07702,
+   "change_from_none": {
+    "em": 0.03701,
+    "true_prior": -0.00188,
+    "true_mean": -0.00201
+   }
+  },
+  {
+   "name": "RS 2024",
+   "n": 2500,
+   "observed_over_expected": 0.7278,
+   "source_rate": 0.02436,
+   "true_rate": 0.01852,
+   "mean_predicted": 0.02544,
+   "em_rate_median": 0.04468,
+   "change_from_none": {
+    "em": 0.01062,
+    "true_prior": -0.00109,
+    "true_mean": -0.00112
+   }
+  },
+  {
+   "name": "RS 2025",
+   "n": 2500,
+   "observed_over_expected": 1.0144,
+   "source_rate": 0.02436,
+   "true_rate": 0.02715,
+   "mean_predicted": 0.02676,
+   "em_rate_median": 0.06885,
+   "change_from_none": {
+    "em": 0.01998,
+    "true_prior": 0.00011,
+    "true_mean": 0.0
+   }
+  },
+  {
+   "name": "MS 2023",
+   "n": 2500,
+   "observed_over_expected": 0.8463,
+   "source_rate": 0.02431,
+   "true_rate": 0.01693,
+   "mean_predicted": 0.02,
+   "em_rate_median": 0.0,
+   "change_from_none": {
+    "em": 0.14665,
+    "true_prior": 2e-05,
+    "true_mean": -0.00026
+   }
+  },
+  {
+   "name": "MS 2024",
+   "n": 2500,
+   "observed_over_expected": 1.7247,
+   "source_rate": 0.02431,
+   "true_rate": 0.03855,
+   "mean_predicted": 0.02236,
+   "em_rate_median": 0.0,
+   "change_from_none": {
+    "em": 0.29543,
+    "true_prior": -0.005,
+    "true_mean": -0.00524
+   }
+  },
+  {
+   "name": "MS 2025",
+   "n": 2500,
+   "observed_over_expected": 1.9843,
+   "source_rate": 0.02431,
+   "true_rate": 0.04454,
+   "mean_predicted": 0.02245,
+   "em_rate_median": 0.0,
+   "change_from_none": {
+    "em": 0.32896,
+    "true_prior": -0.00891,
+    "true_mean": -0.0092
+   }
+  },
+  {
+   "name": "MT 2023",
+   "n": 2500,
+   "observed_over_expected": 0.9662,
+   "source_rate": 0.02409,
+   "true_rate": 0.02351,
+   "mean_predicted": 0.02433,
+   "em_rate_median": 0.03079,
+   "change_from_none": {
+    "em": 0.00882,
+    "true_prior": -1e-05,
+    "true_mean": -1e-05
+   }
+  },
+  {
+   "name": "MT 2024",
+   "n": 2500,
+   "observed_over_expected": 1.2505,
+   "source_rate": 0.02409,
+   "true_rate": 0.03227,
+   "mean_predicted": 0.0258,
+   "em_rate_median": 0.06082,
+   "change_from_none": {
+    "em": 0.00976,
+    "true_prior": -0.00075,
+    "true_mean": -0.0008
+   }
+  },
+  {
+   "name": "MT 2025",
+   "n": 2500,
+   "observed_over_expected": 1.2884,
+   "source_rate": 0.02409,
+   "true_rate": 0.03394,
+   "mean_predicted": 0.02635,
+   "em_rate_median": 0.08129,
+   "change_from_none": {
+    "em": 0.02312,
+    "true_prior": -0.00098,
+    "true_mean": -0.00107
+   }
+  },
+  {
+   "name": "GO 2023",
+   "n": 2500,
+   "observed_over_expected": 0.3837,
+   "source_rate": 0.02459,
+   "true_rate": 0.00877,
+   "mean_predicted": 0.02285,
+   "em_rate_median": 0.0,
+   "change_from_none": {
+    "em": 0.04038,
+    "true_prior": -0.00598,
+    "true_mean": -0.00599
+   }
+  },
+  {
+   "name": "GO 2024",
+   "n": 2500,
+   "observed_over_expected": 1.485,
+   "source_rate": 0.02459,
+   "true_rate": 0.03868,
+   "mean_predicted": 0.02604,
+   "em_rate_median": 0.05182,
+   "change_from_none": {
+    "em": 0.00087,
+    "true_prior": -0.00289,
+    "true_mean": -0.0029
+   }
+  },
+  {
+   "name": "GO 2025",
+   "n": 2500,
+   "observed_over_expected": 1.4228,
+   "source_rate": 0.02459,
+   "true_rate": 0.04213,
+   "mean_predicted": 0.02961,
+   "em_rate_median": 0.12486,
+   "change_from_none": {
+    "em": 0.0457,
+    "true_prior": -0.00213,
+    "true_mean": -0.00261
+   }
+  },
+  {
+   "name": "DF 2023",
+   "n": 2500,
+   "observed_over_expected": 1.0976,
+   "source_rate": 0.02398,
+   "true_rate": 0.02648,
+   "mean_predicted": 0.02413,
+   "em_rate_median": 0.02617,
+   "change_from_none": {
+    "em": 0.00844,
+    "true_prior": -0.00012,
+    "true_mean": -0.00011
+   }
+  },
+  {
+   "name": "DF 2024",
+   "n": 2500,
+   "observed_over_expected": 2.2004,
+   "source_rate": 0.02398,
+   "true_rate": 0.05983,
+   "mean_predicted": 0.02719,
+   "em_rate_median": 0.08599,
+   "change_from_none": {
+    "em": -0.00954,
+    "true_prior": -0.01631,
+    "true_mean": -0.01638
+   }
+  }
+ ]
+}

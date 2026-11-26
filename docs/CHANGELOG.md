@@ -18,6 +18,10 @@ Semantic versions, newest first.
 - Checked the label-shift literature. EM failing under input shift is not
   new (Roschewitz et al. 2024). The scale on clinical data and the failed
   warning score may be.
+- True-rate check (`study/true_rate.py`, exploratory, decision rule committed
+  before the run). The same correction with the true local rate helped in 40
+  of 47 targets, and in 34 of the 41 where EM hurt. EM fails at estimating
+  the rate, not at correcting for it.
 - Compared with the closest published work. Withdrew the claim that the local
   sample-size question was new, and recorded what could still make a paper.
 

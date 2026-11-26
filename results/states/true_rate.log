@@ -1,0 +1,60 @@
+   35s read data
+   46s RO 2023: {'em': 0.09894, 'true_prior': -0.00027, 'true_mean': -0.00031}
+   55s PA 2024: {'em': 0.06685, 'true_prior': 1e-05, 'true_mean': -0.00024}
+   55s PA 2025: {'em': 0.02465, 'true_prior': -0.0015, 'true_mean': -0.00158}
+   64s AP 2024: {'em': -0.00163, 'true_prior': -0.01429, 'true_mean': -0.01426}
+   72s MA 2024: {'em': 0.00917, 'true_prior': -0.01566, 'true_mean': -0.01564}
+   73s MA 2025: {'em': 0.00285, 'true_prior': -0.02597, 'true_mean': -0.02609}
+   81s PI 2024: {'em': -0.00913, 'true_prior': -0.01743, 'true_mean': -0.01748}
+   82s PI 2025: {'em': 0.10035, 'true_prior': -0.02965, 'true_mean': -0.03222}
+   90s CE 2023: {'em': 0.06413, 'true_prior': -0.00157, 'true_mean': -0.00182}
+   91s CE 2024: {'em': 0.13049, 'true_prior': 0.00067, 'true_mean': -3e-05}
+   99s PE 2025: {'em': 0.42081, 'true_prior': 0.00344, 'true_mean': -0.00132}
+  107s AL 2024: {'em': 0.11201, 'true_prior': -0.01342, 'true_mean': -0.01496}
+  116s BA 2023: {'em': 0.35754, 'true_prior': -0.00703, 'true_mean': -0.01492}
+  118s BA 2024: {'em': -0.01195, 'true_prior': -0.02207, 'true_mean': -0.02215}
+  118s BA 2025: {'em': 0.05192, 'true_prior': -0.02998, 'true_mean': -0.03124}
+  131s MG 2023: {'em': 0.04253, 'true_prior': -0.00495, 'true_mean': -0.00496}
+  145s MG 2024: {'em': 0.1223, 'true_prior': -0.001, 'true_mean': -0.00106}
+  147s MG 2025: {'em': 0.01393, 'true_prior': 3e-05, 'true_mean': -3e-05}
+  157s ES 2023: {'em': 0.01634, 'true_prior': -0.00665, 'true_mean': -0.00667}
+  159s ES 2024: {'em': 0.28261, 'true_prior': -0.00258, 'true_mean': -0.00291}
+  159s ES 2025: {'em': -0.01932, 'true_prior': -0.02451, 'true_mean': -0.02453}
+  168s RJ 2023: {'em': 0.06375, 'true_prior': -0.00181, 'true_mean': -0.0025}
+  171s RJ 2024: {'em': 0.08104, 'true_prior': -0.0014, 'true_mean': -0.00219}
+  172s RJ 2025: {'em': 0.11974, 'true_prior': -0.00176, 'true_mean': -0.00291}
+  187s SP 2023: {'em': 0.00352, 'true_prior': -0.00305, 'true_mean': -0.00307}
+  225s SP 2024: {'em': 0.00598, 'true_prior': -0.00381, 'true_mean': -0.00381}
+  236s SP 2025: {'em': 0.00055, 'true_prior': -0.00214, 'true_mean': -0.00214}
+  246s PR 2023: {'em': 0.01148, 'true_prior': -0.00196, 'true_mean': -0.00196}
+  253s PR 2024: {'em': 0.12133, 'true_prior': -0.00952, 'true_mean': -0.00971}
+  255s PR 2025: {'em': -0.01783, 'true_prior': -0.02038, 'true_mean': -0.02039}
+  266s SC 2023: {'em': 0.37688, 'true_prior': -0.01125, 'true_mean': -0.01278}
+  272s SC 2024: {'em': 0.2518, 'true_prior': -0.00195, 'true_mean': -0.00246}
+  273s SC 2025: {'em': 0.16236, 'true_prior': 0.00053, 'true_mean': -0.00011}
+  282s RS 2023: {'em': 0.03701, 'true_prior': -0.00188, 'true_mean': -0.00201}
+  288s RS 2024: {'em': 0.01062, 'true_prior': -0.00109, 'true_mean': -0.00112}
+  289s RS 2025: {'em': 0.01998, 'true_prior': 0.00011, 'true_mean': 0.0}
+  298s MS 2023: {'em': 0.14665, 'true_prior': 2e-05, 'true_mean': -0.00026}
+  300s MS 2024: {'em': 0.29543, 'true_prior': -0.005, 'true_mean': -0.00524}
+  302s MS 2025: {'em': 0.32896, 'true_prior': -0.00891, 'true_mean': -0.0092}
+  311s MT 2023: {'em': 0.00882, 'true_prior': -1e-05, 'true_mean': -1e-05}
+  312s MT 2024: {'em': 0.00976, 'true_prior': -0.00075, 'true_mean': -0.0008}
+  313s MT 2025: {'em': 0.02312, 'true_prior': -0.00098, 'true_mean': -0.00107}
+  323s GO 2023: {'em': 0.04038, 'true_prior': -0.00598, 'true_mean': -0.00599}
+  326s GO 2024: {'em': 0.00087, 'true_prior': -0.00289, 'true_mean': -0.0029}
+  328s GO 2025: {'em': 0.0457, 'true_prior': -0.00213, 'true_mean': -0.00261}
+  337s DF 2023: {'em': 0.00844, 'true_prior': -0.00012, 'true_mean': -0.00011}
+  340s DF 2024: {'em': -0.00954, 'true_prior': -0.01631, 'true_mean': -0.01638}
+{
+ "targets": 47,
+ "em_hurt": 41,
+ "true_prior_helped_where_em_hurt": 34,
+ "true_mean_helped_where_em_hurt": 40,
+ "helped_of_all": {
+  "em": 6,
+  "true_prior": 40,
+  "true_mean": 46
+ },
+ "answer": "the estimate failed"
+}

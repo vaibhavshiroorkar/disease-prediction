@@ -13,9 +13,9 @@ Finished items move to [CHANGELOG.md](CHANGELOG.md).
 
 [Findings](research/findings-states.md).
 
-- Correct with each target's true rate, as Chandra H et al. (2026) did. If
-  that repairs most targets, EM fails at estimating the rate, not at
-  correcting it. Needs the source models refitted (about 20 minutes).
+- Suggestion: try a label-free rate estimate built for input shift (for
+  example black-box shift estimation, Lipton et al. 2018), since the true-rate
+  check found EM's estimate is what fails.
 - Read Chandra H et al. 2026 and Esuli et al. 2021 in full.
 - A frozen test of the two post-hoc patterns (repair only pays outside an
   observed over expected band; EM only helps when the ratio passes 2), on new

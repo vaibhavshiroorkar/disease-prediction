@@ -62,7 +62,8 @@ python -m pytest
 
 `study.run_states` is the state study. It saves each target as it finishes and
 resumes from there. `--smoke DIR` runs four targets with three repeats to check
-the code.
+the code. `study.true_rate` reruns EM's correction with the true local rate,
+after `study.run_states` (6 minutes).
 
 `study.run` took 12 minutes on 12 cores. It refuses to run on uncommitted code,
 and records the commit and a SHA-256 of each raw file. Use the library versions

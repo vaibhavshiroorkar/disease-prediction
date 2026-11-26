@@ -16,7 +16,9 @@ built on it chose never to use EM. A labelled one-number shift helped in 37 of
 47 at 500 local patients. Small local samples often hurt, and having more
 severe cases in the sample helped more than having more patients, but only
 partly. Of the two questions in the protocol, the answer to the second is
-"not with this score".
+"not with this score". A later check found why EM failed: its estimate of the
+local rate was wrong. Given the true rate, the same correction helped in 40
+of 47.
 
 ## Targets
 
@@ -83,6 +85,44 @@ These are hypotheses for a next study. They were not frozen in advance.
   ratio of 2 or less (verified). EM may only be worth its risk when the rate
   shift is large.
 
+## Is it the estimate or the correction?
+
+EM does two things. It estimates the local rate from unlabelled predictions,
+then shifts every prediction toward that rate. A later check,
+`python -m study.true_rate`, gave the same shift the true local rate instead.
+It reused the saved test halves and EM samples. All 47 refitted source
+models matched the saved run to within 0.0001 in log loss (verified).
+
+The decision rule was committed before the first run (1196e55). If the true
+rate repaired at least 75% of the targets where EM hurt, the estimate failed.
+It repaired 34 of 41, so **the estimate failed** (verified in
+`results/states/true_rate.json`).
+
+- EM's rate was wrong by a lot. Its median estimate was 1.56 times the true
+  rate. It was more than double in 19 of 47 targets and under half in 12.
+  It was within 0.8 to 1.25 of the truth in only 4 (verified).
+- EM's harm tracked that error closely: Spearman 0.91 between how far off
+  the rate was and how much log loss rose (verified).
+- The correction with the true rate helped, but only a little: a median log
+  loss change of -0.002. EM's median harm was +0.040 (verified).
+- Shifting predictions until their mean matched the true rate helped in 46 of
+  47 (verified). It does not assume the model was calibrated to the source
+  rate on these patients, which may be why it beat the prior formula (40 of
+  47). That reading is assumed.
+- With 2,500 labelled patients, the one-number labelled shift (intercept) did
+  about as well as the true-rate shift. It beat it in 21 of 47, and both had
+  a median change near -0.002 (verified). So most of what local labels buy
+  here is the rate itself.
+
+What this means (assumed): the reweighting step is safe under this shift, if
+the rate is right. EM's estimate is what breaks. When the inputs shift, the
+model's scores move for reasons other than the rate, and EM reads that
+movement as a rate change. A better label-free estimate of the rate would be
+worth more than a better correction. Even a few labelled patients give one.
+
+This check was planned after the results were seen, so it explains the
+failure but does not test a frozen hypothesis.
+
 ## Limits
 
 - 47 targets from 27 states over three years share most of their training
@@ -104,7 +144,8 @@ images. What remains is narrower. It is a pre-registered measurement on
 tabular clinical data with natural shift: EM hurt in 87% of new state-years,
 and a covariate-shift score gave no warning. That suits a workshop or student
 venue as a negative result, not a journal as a new method (assumed, not
-checked against any venue's criteria). Two things would strengthen it: a
-correction with the true local rate (does the estimate fail, or the
-correction?), and a fresh frozen test of the two post-hoc patterns, for
-example on 2026 data when it is published.
+checked against any venue's criteria). The true-rate check adds a mechanism:
+the rate estimate fails and the correction does not. That matches Chandra H et
+al. (2026), who corrected with the known rate and saw calibration improve. A
+fresh frozen test of the post-hoc patterns and of this finding, for example on
+2026 data when it is published, would strengthen it most.
