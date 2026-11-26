@@ -398,6 +398,110 @@ function renderStudy() {
 
 const capital = (text) => text.charAt(0).toUpperCase() + text.slice(1);
 
+// State study
+
+const STATE_TESTS = {
+  S1: "Draws with under 10 local cases hurt more often than draws with 20 or more",
+  S2: "Repair sizes agree better in local cases than in patients",
+  S3: "The input-shift score warns where the label-free repair fails",
+  S4: "A warning cut-off fitted on 2023 works on 2024 and 2025",
+  R1: "A single shift with 500 local patients helps (replication)",
+  R2: "The label-free repair makes things worse (replication)",
+};
+const ESTIMATORS = [["em", "EM's estimate", "dot--em"], ["bbse", "BBSE estimate", "dot--refit"]];
+const RATIO_RANGE = [0.05, 20];
+const signed = (value) => `${value > 0 ? "+" : ""}${value.toFixed(3)}`;
+const ratioText = (value) => `${value < 1 ? value.toFixed(2) : value.toFixed(1)} times`;
+
+function helped(targets, key) {
+  return targets.filter((t) => t.change[key] < 0).length;
+}
+
+function stateTiles(states) {
+  const { targets } = states;
+  const of = targets.length;
+  return [
+    ["Label-free repair (EM)", `${of - helped(targets, "em")} of ${of}`, "made predictions worse"],
+    ["EM's correction, given the true rate", `${helped(targets, "true_prior")} of ${of}`, "made them better"],
+    ["BBSE, another label-free estimate", `${helped(targets, "bbse")} of ${of}`, "made them better"],
+    ["One-number shift, labelled patients", `${helped(targets, "intercept")} of ${of}`, "made them better"],
+  ].map(([label, value, note]) => {
+    const tile = html("div", "lab-tile");
+    tile.append(html("span", "lab-tile-label", label), html("strong", "", value), html("small", "", note));
+    return tile;
+  });
+}
+
+function dotKey(entries) {
+  const list = html("ul", "legend");
+  for (const [, label, cls] of entries) {
+    const item = html("li");
+    const mark = svg("svg", { viewBox: "0 0 14 14", "aria-hidden": "true", class: "key key--dot" });
+    mark.append(svg("circle", { cx: 7, cy: 7, r: 5, class: `dot ${cls}` }));
+    item.append(mark, html("span", "", label));
+    list.append(item);
+  }
+  return list;
+}
+
+function drawRateErrors(targets) {
+  const clampRatio = (v) => Math.min(RATIO_RANGE[1], Math.max(RATIO_RANGE[0], v));
+  const changes = targets.flatMap((t) => ESTIMATORS.map(([key]) => t.change[key]));
+  const low = Math.min(0, ...changes);
+  const high = Math.max(...changes);
+  const pad = (high - low) * 0.06;
+  const chart = frame("How far each estimate of the local rate was off, against the change in log loss", {
+    width: wideChart(), height: 340, x: RATIO_RANGE.map(Math.log10), y: [low - pad, high + pad],
+    xTicks: [0.1, 0.5, 1, 2, 5, 10].map(Math.log10), yTicks: niceTicks(low - pad, high + pad),
+    xLabel: "Estimated rate divided by the true rate (log scale)", yLabel: "Change in log loss",
+    xText: (v) => `${Number((10 ** v).toPrecision(2))}x`, yText: (v) => v.toFixed(2),
+  });
+  const { root, px, py } = chart;
+  root.append(svg("line", { x1: px(0), x2: px(0), y1: py(high + pad), y2: py(low - pad), class: "chance" }));
+  root.append(svg("line", { x1: px(RATIO_RANGE.map(Math.log10)[0]), x2: px(RATIO_RANGE.map(Math.log10)[1]),
+    y1: py(0), y2: py(0), class: "chance" }));
+  for (const [key, label, cls] of ESTIMATORS) {
+    for (const t of targets) {
+      const ratio = t[`${key}_rate_over_true`];
+      const node = svg("circle", { cx: px(Math.log10(clampRatio(ratio))), cy: py(t.change[key]), r: 5,
+        class: `dot ${cls} dot--ringed` });
+      root.append(describe(node, `${t.name}, ${label}: ${ratioText(ratio)} the true rate, log loss ${signed(t.change[key])}`));
+    }
+  }
+  return root;
+}
+
+function renderStates() {
+  const states = data.states;
+  $("#lab-state-tiles").replaceChildren(...stateTiles(states));
+  $("#lab-state-scatter").replaceChildren(figure(
+    "A wrong guess of the rate is what hurts",
+    "Each dot is one state-year. Dots right of the dashed line guessed too high, dots above the other line did harm. "
+      + "Ratios beyond the axis are drawn at its edge.",
+    drawRateErrors(states.targets),
+    dotKey(ESTIMATORS),
+  ));
+  $("#lab-state-verdicts").replaceChildren(...Object.entries(STATE_TESTS).map(([id, text]) => {
+    const v = states.verdicts[id];
+    let detail;
+    if (id === "S2") detail = `Ratio ${v.cv_ratio.toFixed(2)}, 95% interval ${v.ci[0].toFixed(2)} to ${v.ci[1].toFixed(2)}. It needed to stay below 1.`;
+    else if (id === "S3") detail = `Spearman ${v.spearman.toFixed(2)}, 95% interval ${v.ci[0].toFixed(2)} to ${v.ci[1].toFixed(2)}. It needed to stay above 0.`;
+    else if (id === "S4") detail = `The fitted cut-off was never to use EM, so it could not help in any of ${v.of} targets.`;
+    else detail = `True in ${v.count} of ${v.of} targets. The bar set in advance was ${percent(v.needed_share)}.`;
+    if (id === "S1") detail += " Flawed as written: it pools sample sizes, so it mostly compares small samples with large.";
+    const item = html("li");
+    item.append(html("strong", v.supported ? "verdict is-yes" : "verdict is-no", v.supported ? "Supported" : "Not supported"),
+      html("span", "", `${id}. ${text}. `), html("small", "", detail));
+    return item;
+  }));
+  $("#lab-state-table").replaceChildren(table("Every state-year",
+    ["Target", "Rows", "AUC at home", "AUC there", "Real over predicted", "Local patients", "EM", "True rate", "BBSE", "Labelled shift"],
+    states.targets.map((t) => [
+      t.name, count(t.rows), t.source_auc.toFixed(3), t.target_auc.toFixed(3), t.oe.toFixed(2), count(t.largest_n),
+      signed(t.change.em), signed(t.change.true_prior), signed(t.change.bbse), signed(t.change.intercept),
+    ])));
+}
+
 function swatchesForRates() {
   const list = html("ul", "legend");
   for (const [cls, label] of [["predicted", "Average prediction"], ["observed", "Real rate"]]) {
@@ -433,6 +537,7 @@ export async function loadLab() {
   $("#lab-reset").addEventListener("click", renderModel);
   renderModel();
   renderStudy();
+  renderStates();
   status.hidden = true;
   $("#lab-body").hidden = false;
 }

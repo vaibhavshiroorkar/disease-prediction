@@ -51,3 +51,18 @@ def test_page_matches_the_study_report(lab) -> None:
     assert lab["study_commit"] == report["provenance"]["commit"]
     assert lab["verdicts"] == report["verdicts"]
     assert [t["name"] for t in lab["transfers"]] == [t["name"] for t in report["transfers"]]
+
+
+def test_page_matches_the_state_study(lab) -> None:
+    states = ROOT / "results" / "states"
+    report = json.loads((states / "report.json").read_text(encoding="utf-8"))
+    panel = lab["states"]
+    assert panel["commit"] == report["provenance"]["commit"]
+    assert [t["name"] for t in panel["targets"]] == [t["name"] for t in report["targets"]]
+    for test, verdict in report["verdicts"].items():
+        assert panel["verdicts"][test]["supported"] == verdict["supported"]
+    for check in ("true_rate", "bbse"):
+        summary = json.loads((states / f"{check}.json").read_text(encoding="utf-8"))["summary"]
+        assert panel["checks"][check] == summary
+    em_hurt = sum(t["change"]["em"] > 0 for t in panel["targets"])
+    assert em_hurt == report["verdicts"]["R2"]["count"]

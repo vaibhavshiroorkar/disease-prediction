@@ -18,7 +18,9 @@ severe cases in the sample helped more than having more patients, but only
 partly. Of the two questions in the protocol, the answer to the second is
 "not with this score". A later check found why EM failed: its estimate of the
 local rate was wrong. Given the true rate, the same correction helped in 40
-of 47.
+of 47. A second label-free estimate, BBSE, failed too (0 of 47 helped). A
+frozen retest on 2026 data is written down in
+[protocol-2026.md](protocol-2026.md) and has not run yet.
 
 ## Targets
 
@@ -123,6 +125,38 @@ worth more than a better correction. Even a few labelled patients give one.
 This check was planned after the results were seen, so it explains the
 failure but does not test a frozen hypothesis.
 
+## Does a different label-free estimate do better?
+
+No. `python -m study.states.bbse` kept EM's correction and swapped in
+black-box shift estimation (BBSE, Lipton et al. 2018) on the same unlabelled
+samples. Its rule, committed before the run (495cf21), judged the hard-flag
+version. It reproduced the saved run on all 47 targets first (verified).
+
+| Estimate | Beat no update | Beat EM | Rate within 0.8 to 1.25 of the truth | Median estimate over true rate |
+|---|---|---|---|---|
+| EM | 6 of 47 | | 4 | 1.56 |
+| BBSE, flags at the source cut-off | 0 of 47 | 2 of 47 | 0 | 5.69 |
+| BBSE, mean probabilities | 9 of 47 | 29 of 47 | 6 | 1.40 |
+
+All verified in `results/states/bbse.json`. The rule's answer: **BBSE fails
+here too.** The soft version beat EM in 29 of 47 but still hurt in 38.
+
+- The pattern from the true-rate check holds for both estimators: harm tracks
+  how wrong the rate is. Spearman 0.92 for soft BBSE and 0.54 for hard BBSE
+  (verified).
+- Hard BBSE was worst. The source cut-off flags many patients, so a small
+  rise in flags under input shift reads as a large rise in the rate. That
+  reading is assumed.
+- EM and BBSE share one assumption: a severe case looks the same in every
+  state. Two different algorithms built on it both fail, so the assumption is
+  what fails here, not one algorithm (assumed, but now from two estimators
+  rather than one).
+
+What this means for a clinic (assumed): with these shifts, no label-free
+estimate we tried is safe. The true rate fixes most of the problem, and it is
+one number. A state's surveillance count of severe cases, or a few hundred
+labelled patients, gives it.
+
 ## Limits
 
 - 47 targets from 27 states over three years share most of their training
@@ -146,6 +180,7 @@ and a covariate-shift score gave no warning. That suits a workshop or student
 venue as a negative result, not a journal as a new method (assumed, not
 checked against any venue's criteria). The true-rate check adds a mechanism:
 the rate estimate fails and the correction does not. That matches Chandra H et
-al. (2026), who corrected with the known rate and saw calibration improve. A
-fresh frozen test of the post-hoc patterns and of this finding, for example on
-2026 data when it is published, would strengthen it most.
+al. (2026), who corrected with the known rate and saw calibration improve. The
+BBSE check shows the failure is not specific to EM. The 2026 retest
+([protocol-2026.md](protocol-2026.md)) is frozen and its code committed; it
+would turn the post-hoc findings into tested ones.

@@ -22,6 +22,17 @@ Semantic versions, newest first.
   before the run). The same correction with the true local rate helped in 40
   of 47 targets, and in 34 of the 41 where EM hurt. EM fails at estimating
   the rate, not at correcting for it.
+- Split `study/` into `shared/`, `transfer/` and `states/`, and grouped tests
+  by area. The BBSE check reproduced every saved number on the new code.
+- BBSE check (`study/states/bbse.py`, rule committed before the run): a second
+  label-free rate estimate helped in 0 of 47 targets (soft version 9 of 47).
+  The shared assumption fails, not one algorithm.
+- Froze a retest protocol for 2026 (`docs/research/protocol-2026.md`) and
+  committed its code (`study/states/retest.py`) before downloading the data.
+- Lab page: a state-by-state section with the four repairs, a chart of rate
+  error against harm, the six verdicts and every target.
+- Read Chandra H et al. (2026) in full and the Esuli et al. abstract.
+- Local CI uses installed Edge on Windows, so the pre-push hook passes.
 - Compared with the closest published work. Withdrew the claim that the local
   sample-size question was new, and recorded what could still make a paper.
 

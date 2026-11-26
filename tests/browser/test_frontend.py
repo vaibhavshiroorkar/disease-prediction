@@ -259,6 +259,18 @@ def test_lab_cutoff_changes_the_numbers_and_targets_redraw(page, site):
     expect(page.locator("#lab-verdicts li")).to_have_count(5)
 
 
+def test_lab_shows_the_state_study(page, site):
+    from playwright.sync_api import expect
+
+    page.goto(f"{site}/#/lab")
+    # From results/states/report.json: EM made 41 of 47 state-years worse.
+    expect(page.locator("#lab-state-tiles")).to_contain_text("41 of 47")
+    expect(page.locator("#lab-state-verdicts li")).to_have_count(6)
+    # 47 targets, two estimates each.
+    expect(page.locator("#lab-state-scatter svg.plot circle")).to_have_count(94)
+    expect(page.locator("#lab-state-table tbody tr")).to_have_count(47)
+
+
 def test_lab_fits_a_phone(page, site):
     page.set_viewport_size({"width": 390, "height": 844})
     page.goto(f"{site}/#/lab")

@@ -9,8 +9,8 @@
   <link rel="icon" href="/static/mark.svg" type="image/svg+xml">
   <link rel="preload" href="/static/fonts/atkinson-hyperlegible-next.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/static/style.css?v=3">
-  <link rel="stylesheet" href="/static/lab.css?v=1">
-  <script src="/static/app.js?v=4" type="module"></script>
+  <link rel="stylesheet" href="/static/lab.css?v=2">
+  <script src="/static/app.js?v=5" type="module"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -189,7 +189,20 @@
           <p>Missing values can give the answer away too. Here a model sees only which values are missing.
             0.5 means they say nothing.</p>
           <div id="lab-missing-audit"></div>
-          <p class="lab-note">Protocol, findings and code are in the
+        </section>
+
+        <section class="lab-section" aria-labelledby="lab-states">
+          <h2 id="lab-states">State by state: can the rate be fixed without labels?</h2>
+          <p>A second study moved the dengue model to 47 Brazilian state-years, 2023 to 2025. Each state's
+            model was trained on every other state, and the rules were committed before it ran. Each number
+            below compares a repair with no update, at the largest local sample the state allowed.</p>
+          <div id="lab-state-tiles" class="lab-tiles"></div>
+          <div id="lab-state-scatter"></div>
+          <ul id="lab-state-verdicts" class="verdicts"></ul>
+          <div id="lab-state-table"></div>
+          <p class="lab-note">The true-rate and BBSE checks were planned after the first results were seen.
+            A frozen retest on 2026 data is written down before that data was opened.
+            Protocols, findings and code are in the
             <a href="https://github.com/vaibhavshiroorkar/disease-prediction" rel="noreferrer">repository</a>.</p>
         </section>
       </div>

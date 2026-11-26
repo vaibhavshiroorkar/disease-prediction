@@ -1,4 +1,4 @@
-import { loadLab } from "./lab.js?v=1";
+import { loadLab } from "./lab.js?v=2";
 
 const $ = (selector) => document.querySelector(selector);
 const fields = $("#input-fields");

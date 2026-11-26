@@ -3,8 +3,9 @@
     python -m study.lab_data
 
 Scores the committed models on their own held-out rows and stops if the AUC
-differs from the committed summary. The transfer numbers come straight from
-results/transfer/. The file holds counts and averages only, no patient rows.
+differs from the committed summary. The study numbers come straight from
+results/transfer/ and results/states/. The file holds counts and averages
+only, no patient rows.
 """
 
 from __future__ import annotations
@@ -25,6 +26,7 @@ from ml.train import _split
 
 TARGET = ROOT / "app" / "static" / "lab-data.json"
 RESULTS = ROOT / "results" / "transfer"
+STATE_RESULTS = ROOT / "results" / "states"
 GRID = 150
 HISTOGRAM_BINS = 24
 CURVE_METRICS = ("log_loss", "gap", "auc")
@@ -110,6 +112,44 @@ def slim_transfer(t: dict[str, Any]) -> dict[str, Any]:
     return out
 
 
+def _read(path) -> dict[str, Any]:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def state_panel() -> dict[str, Any]:
+    """The state study, its true-rate and BBSE checks, joined per target."""
+    report = _read(STATE_RESULTS / "report.json")
+    checks = {name: {t["name"]: t for t in _read(STATE_RESULTS / f"{name}.json")["targets"]}
+              for name in ("true_rate", "bbse")}
+    summaries = {name: _read(STATE_RESULTS / f"{name}.json")["summary"] for name in checks}
+    targets = []
+    for t in report["targets"]:
+        n = str(t["sizes"][-1])
+        true_rate, bbse = checks["true_rate"][t["name"]], checks["bbse"][t["name"]]
+        targets.append({
+            "name": t["name"], "stage": t["stage"], "rows": t["target_rows"],
+            "source_auc": t["source"]["auc"], "target_auc": t["target"]["auc"],
+            "oe": t["observed_over_expected"], "shift_score": t["shift_score"],
+            "largest_n": int(n), "repair_size": t["repair_size"]["intercept"],
+            "change": {
+                "em": t["curves"]["em"][n]["diff_from_none"],
+                "intercept": t["curves"]["intercept"][n]["diff_from_none"],
+                "true_prior": true_rate["change_from_none"]["true_prior"],
+                "bbse": bbse["change_from_none"]["bbse"],
+            },
+            "em_rate_over_true": bbse["rate_over_true"]["em"],
+            "bbse_rate_over_true": bbse["rate_over_true"]["bbse"],
+        })
+    drop = ("targets", "eligible", "repaired", "em_worse", "guard_worse", "guard_helps")
+    return {
+        "commit": report["provenance"]["commit"],
+        "verdicts": {k: {f: v for f, v in verdict.items() if f not in drop}
+                     for k, verdict in report["verdicts"].items()},
+        "checks": summaries,
+        "targets": targets,
+    }
+
+
 def main() -> int:
     report = json.loads((RESULTS / "report.json").read_text(encoding="utf-8"))
     audits = json.loads((RESULTS / "audits.json").read_text(encoding="utf-8"))
@@ -119,6 +159,7 @@ def main() -> int:
         "verdicts": report["verdicts"],
         "transfers": [slim_transfer(t) for t in report["transfers"]],
         "audits": {k: audits[k] for k in ("missingness", "site")},
+        "states": state_panel(),
     }
     TARGET.write_text(json.dumps(data, separators=(",", ":")) + "\n", encoding="utf-8", newline="\n")
     print(f"wrote {TARGET.relative_to(ROOT).as_posix()}, {TARGET.stat().st_size / 1024:.0f} KB")

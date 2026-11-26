@@ -70,6 +70,8 @@
 .dot--platt { fill: var(--s-platt); }
 .dot--refit { fill: var(--s-refit); }
 .dot--rate { fill: var(--s-rate); }
+/* A surface ring keeps overlapping dots apart. */
+.dot--ringed { stroke: var(--page); stroke-width: 2; fill-opacity: .85; }
 
 .legend { display: flex; flex-wrap: wrap; gap: 4px 16px; padding: 0; list-style: none; font-size: 13px; }
 .legend li { display: flex; align-items: center; gap: 6px; }
