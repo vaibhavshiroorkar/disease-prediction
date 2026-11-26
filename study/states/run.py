@@ -42,7 +42,7 @@ def _log(started: float, message: str) -> None:
     print(f"{time.perf_counter() - started:7.0f}s {message}", flush=True)
 
 
-def _saved(path: Path, commit: str) -> dict[str, Any] | None:
+def saved_file(path: Path, commit: str) -> dict[str, Any] | None:
     """A finished file from this commit, or None. Another commit's file is an error."""
     if not path.exists():
         return None
@@ -77,7 +77,7 @@ def main() -> int:
         reports = []
         for year, state in [t for t in chosen if t[0] in stage_years]:
             path = out / "targets" / f"{year}_{state}.json"
-            report = _saved(path, commit)
+            report = saved_file(path, commit)
             if report is None:
                 X_t, y_t = target_rows(years[year], state)
                 report, rows = run_target(year, state, stage, sources(state), X_t, y_t, args.jobs, repeats)
@@ -92,7 +92,7 @@ def main() -> int:
         return reports
 
     stage_a = run_stage("A", STAGE_A)
-    guard = _saved(out / "guard.json", commit)
+    guard = saved_file(out / "guard.json", commit)
     if guard is None:
         guard = {"commit": commit, "threshold": guard_threshold(stage_a),
                  "fitted_on": [r["name"] for r in stage_a]}

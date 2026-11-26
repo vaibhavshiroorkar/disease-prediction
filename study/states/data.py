@@ -98,3 +98,13 @@ def source_rows(source: Year, state: str, seed: int = config.RANDOM_SEED) -> tup
 def target_rows(year: Year, state: str) -> tuple[pd.DataFrame, np.ndarray]:
     held = year.state == state
     return year.X[held].reset_index(drop=True), year.y[held]
+
+
+def unclassified_share(year: int) -> float:
+    """Share of notified rows with no final class yet. High in a preliminary file."""
+    source = config.SOURCES[f"dengue_{year}"]
+    rows = missing = 0
+    for chunk in pd.read_csv(source.path, usecols=["CLASSI_FIN"], dtype=str, chunksize=CHUNK_ROWS):
+        rows += len(chunk)
+        missing += int(chunk["CLASSI_FIN"].isna().sum())
+    return missing / rows

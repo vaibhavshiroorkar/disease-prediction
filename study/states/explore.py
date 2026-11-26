@@ -37,7 +37,9 @@ def cases_within_cells(draws: pd.DataFrame) -> dict[str, object]:
     for (_, n), cell in draws.groupby(["target", "n"]):
         if cell["cases"].nunique() > 2:
             rhos.append({"n": int(n), "rho": spearmanr(cell["cases"], cell["diff"]).statistic})
-    table = pd.DataFrame(rhos).dropna()
+    table = pd.DataFrame(rhos, columns=["n", "rho"]).dropna()
+    if table.empty:
+        return {"cells": 0, "share_negative": None, "median_rho": None, "by_n": {}}
     by_n = table.groupby("n")["rho"]
     return {
         "cells": len(table),

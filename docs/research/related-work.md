@@ -45,14 +45,16 @@ real clinical shifts, and has anyone predicted where it fails?
 
 | Work | What it did | Bearing on our result | Read |
 |---|---|---|---|
-| Esuli, Molinari and Sebastiani, *ACM TOIS*, 2021 ([record](https://iris.cnr.it/handle/20.500.14243/420688)) | Reassessed EM (they call it SLD) on text data | EM helps only with few classes and a calibrated classifier, and otherwise hurts. Ours had two classes and calibrated sources, yet it hurt, so calibration alone does not explain our failures | search summary |
+| Esuli, Molinari and Sebastiani, *ACM TOIS*, 2021 ([open copy](https://openportal.isti.cnr.it/doc?id=people______::632733a0730caf1a410ff4f9f1594b92)) | Reassessed EM (they call it SLD) on a large text dataset, across amounts of rate shift and several learners | EM helps only with few classes and a calibrated classifier, and otherwise hurts. Ours had two classes and calibrated sources, yet it hurt, so calibration alone does not explain our failures. Their shifts changed the class mix; the abstract does not mention inputs shifting | abstract |
 | Godau et al., arXiv 2023, *Medical Image Analysis* 2025 ([2303.12540](https://arxiv.org/abs/2303.12540)) | 30 medical image tasks. Rate correction improved calibration | The shifts were made by resampling one test set, so inputs within a class could not change. They used the true rates with noise, not a label-free estimate | method and results sections |
 | Roschewitz, Mehta, Jones and Glocker, arXiv 2024 ([2411.07940](https://arxiv.org/abs/2411.07940)) | Images from 4 datasets, mixes of real scanners and sites. Tells rate shift from input shift with two tests | A label-free rate correction made calibration "much worse" once inputs also shifted. Same mechanism as ours, shown in plots, on images. They do not claim their tests predict whether the correction will help | full text |
-| Chandra H, Shivhare and Sahu, Research Square preprint, July 2026 ([rs-10254564](https://www.researchsquare.com/article/rs-10254564/v1)) | MIMIC-IV to 185 eICU hospitals. A rate correction cut mean calibration error from 0.071-0.085 to 0.027-0.037 | It used each hospital's true mortality rate, not an estimate from unlabelled predictions. So knowing the rate fixed most of the error there. Estimating it was not tested | abstract |
+| Chandra H, Shivhare and Sahu, Research Square preprint, July 2026 ([rs-10254564](https://www.researchsquare.com/article/rs-10254564/v1)) | MIMIC-IV to 185 eICU hospitals, four model families. The Saerens correction, given each hospital's observed mortality rate, cut mean calibration error from 0.071-0.085 to 0.027-0.037, close to Platt scaling on 30% labelled data | Same correction as our `true_prior`. They put 55 to 65% of calibration error down to the rate and the rest to input shift. They cite BBSE but never estimate the rate from unlabelled data. Their synthetic check held inputs within a class fixed by construction. Our true-rate check agrees with them, and our EM and BBSE checks test the step they skipped | full text, read as page images |
+| Lipton, Wang and Smola, ICML 2018 ([1802.03916](https://arxiv.org/abs/1802.03916)) | Black-box shift estimation (BBSE): the local rate from the model's confusion matrix on source data | Assumes inputs within a class do not change, as EM does, but needs no calibration. Our BBSE check (`study/states/bbse.py`) tests it on the same 47 targets | abstract |
 | Garg et al., NeurIPS 2020 ([2003.07554](https://arxiv.org/abs/2003.07554)) | EM (MLLS) with calibration beats BBSE under pure rate shift | Benchmarks on simulated rate shift only | search summary |
 
-Not read: the full text of Esuli et al. and of Chandra H et al. (the PDF could
-not be turned into text here).
+Not read: the full text of Esuli et al. The open copy is a PDF download,
+and the publisher's page is behind a bot check. The abstract is enough for
+the point used here.
 
 ## What is new here, and what is not
 
@@ -76,10 +78,12 @@ not be turned into text here).
   state-years, paired against labelled updates), and the negative result that
   a domain-classifier score did not predict where EM fails. Roschewitz et al.
   identify the type of shift but do not test whether that predicts the
-  correction's success. Chandra H et al. suggest that the true rate repairs
-  most of the error. If that holds here too, EM fails because its rate
-  estimate is wrong, not because rate correction is wrong. We have not tested
-  that.
+  correction's success. Chandra H et al. found that the true rate repairs
+  most of the error. Our true-rate check found the same on all 47 targets
+  (`results/states/true_rate.json`): EM's failure is its rate estimate, not
+  the correction. Testing a second label-free estimate (BBSE) on the same
+  draws, and retesting both findings on unseen 2026 data
+  ([protocol-2026.md](protocol-2026.md)), is the part we have not seen done.
 
 ## Choices the literature settled
 

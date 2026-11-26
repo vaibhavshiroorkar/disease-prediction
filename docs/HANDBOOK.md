@@ -66,8 +66,12 @@ python -m pytest
 
 `study.states.run` is the state study. It saves each target as it finishes and
 resumes from there. `--smoke DIR` runs four targets with three repeats to check
-the code. `study.states.true_rate` reruns EM's correction with the true local rate,
-after `study.states.run` (6 minutes).
+the code. Three checks run after it, on the same draws, and stop unless they
+reproduce its saved numbers:
+
+- `study.states.true_rate`: EM's correction given the true local rate (6 minutes).
+- `study.states.bbse`: a second label-free rate estimate, BBSE (about 25 minutes).
+- `study.states.retest`: the frozen 2026 retest. Needs the 2026 file.
 
 `study.transfer.run` took 12 minutes on 12 cores. It refuses to run on uncommitted code,
 and records the commit and a SHA-256 of each raw file. Use the library versions

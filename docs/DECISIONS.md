@@ -77,3 +77,38 @@
 - **Decided:** no retraining for this version.
 - **Why:** the study measures these model families and settings. Changing them
   would break the link between the results and what the site serves.
+
+## 2026-11-26: one package per study
+
+- **Decided:** `study/shared/` for code both studies use (draws, updates,
+  provenance, the dengue source model), `study/transfer/` and `study/states/`
+  for each study, and tests grouped as `tests/app/`, `tests/ml/`,
+  `tests/study/`.
+- **Why:** two studies shared one folder, and each imported the other's private
+  helpers (`_write_json`, a fake dataset object to pass a feature list).
+  `tests/` had 19 loose files.
+- **Left alone:** `ml/` and `app/`. Each file there has one purpose, the
+  served app imports them, and moving them could break the deployed demo.
+- **Checked:** a smoke run and the BBSE check reproduced the saved numbers on
+  the new code.
+
+## 2026-11-26: BBSE as the second label-free estimate
+
+- **Decided:** test black-box shift estimation (Lipton et al. 2018) on the
+  same draws, with EM's correction, judged by a rule committed before the run.
+- **Considered:** EM with recalibration (Garg et al. 2020 favour it, but our
+  sources were already calibrated and EM is that method), and estimators that
+  reweight for input shift (they need a different correction, so they would
+  not answer whether the estimate is what fails).
+- **Why:** BBSE assumes the same thing as EM but uses the model differently,
+  hard flags and a confusion matrix instead of iterated probabilities. If it
+  fails too, the shared assumption is the problem, not EM's algorithm.
+
+## 2026-11-26: retest on the preliminary 2026 file
+
+- **Decided:** freeze a third protocol before downloading 2026, and test every
+  post-hoc finding on it with pass marks.
+- **Why:** the 2026 file exists now (15.9 MB, updated 2026-11-25), so waiting
+  for the final file is not needed to test the findings on unseen data.
+- **Risk, written into the protocol:** a preliminary file may hold severe
+  cases back while they are classified, which looks like a rate shift.

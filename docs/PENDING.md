@@ -13,15 +13,11 @@ Finished items move to [CHANGELOG.md](CHANGELOG.md).
 
 [Findings](research/findings-states.md).
 
-- Suggestion: try a label-free rate estimate built for input shift (for
-  example black-box shift estimation, Lipton et al. 2018), since the true-rate
-  check found EM's estimate is what fails.
-- Read Chandra H et al. 2026 and Esuli et al. 2021 in full.
-- A frozen test of the two post-hoc patterns (repair only pays outside an
-  observed over expected band; EM only helps when the ratio passes 2), on new
-  data such as SINAN 2026 once it is published.
-- A fixed version of S1 for that test: compare cases within each n, not pooled.
-- Add the state results to the Lab page.
+- Run the frozen 2026 retest ([protocol](research/protocol-2026.md)). Needs
+  `DENGBR26.csv.zip` (15.9 MB, preliminary) downloaded with Vaibhav's OK, its
+  hash recorded in the protocol in its own commit, then
+  `python -m study.states.retest`.
+- Read Esuli et al. 2021 in full. The open copy is a PDF download.
 
 ## Research ideas (suggestions, not started)
 
