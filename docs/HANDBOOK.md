@@ -16,6 +16,7 @@ repair it. The answer is in [research/findings.md](research/findings.md).
 | To run or test it | [README](../README.md) |
 | The question, rules and pass marks | [research/protocol.md](research/protocol.md) |
 | The state-by-state study, frozen before its code | [research/protocol-states.md](research/protocol-states.md) |
+| Its results | [research/findings-states.md](research/findings-states.md) |
 | The results and their limits | [research/findings.md](research/findings.md) |
 | What others found | [research/related-work.md](research/related-work.md) |
 | Each model's data, scores and limits | [model-card.md](model-card.md) |
@@ -76,3 +77,4 @@ named in the report. Another scikit-learn may give slightly different numbers.
 | Chart text was unreadable on phones and "100%" was cut off | Looking at screenshots | one fix | Narrower drawing on phones, wider margin |
 | Local browser tests could not start: Chromium not installed | The run failed | one change | `BROWSER_CHANNEL=msedge` uses installed Edge |
 | The findings draft said small samples hurt in 7 of 10 targets | Recounting from the report: 8 | one fix | Recount each claim from `report.json` before committing |
+| State study S1 pooled draws across every n, so "few cases" mostly meant "few patients" | Reading the result critically after the run | S1 cannot answer its question | An exploratory within-n check; the next protocol compares within each n |

@@ -12,6 +12,9 @@ Semantic versions, newest first.
   It reads SINAN in chunks, fits one source model per state, writes the EM
   guard before stage B and resumes after a stop. Every draw in both studies
   now records its local severe cases.
+- Ran the state study (47 targets, 20 minutes). S1 and both replications
+  passed. S2, S3 and S4 did not. EM hurt in 41 of 47. Findings, exploratory
+  checks (`study/explore_states.py`) and results committed.
 - Compared with the closest published work. Withdrew the claim that the local
   sample-size question was new, and recorded what could still make a paper.
 

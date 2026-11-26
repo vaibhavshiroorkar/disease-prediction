@@ -1,5 +1,14 @@
 # Decision log
 
+## 2026-11-26: report the state study as run, flaws included
+
+- **Decided:** keep every frozen verdict as computed. S1 stays "supported" in
+  the table, with a caveat that its design cannot separate cases from
+  patients. The two patterns seen afterwards are labelled post hoc.
+- **Why:** rewriting a test after its result is the failure the protocol
+  exists to stop. A known flaw, stated, is worth more than a quiet fix.
+- **Would change it:** nothing for this run. The next protocol fixes S1.
+
 ## 2026-11-26: the state study design
 
 - **Decided:** targets are state-years with at least 1,000 confirmed and 100

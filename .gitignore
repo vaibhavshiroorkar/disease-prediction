@@ -20,3 +20,5 @@ playwright-report/
 .DS_Store
 .idea/
 .vscode/
+results/states/targets/
+results/states/run.err

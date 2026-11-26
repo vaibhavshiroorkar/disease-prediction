@@ -9,12 +9,18 @@ Finished items move to [CHANGELOG.md](CHANGELOG.md).
 - After merging, tag the merge commit `v1.1.0` and push the tag.
 
 
-## State study (in progress)
+## State study (run, findings written)
 
-Protocol: [research/protocol-states.md](research/protocol-states.md).
+[Findings](research/findings-states.md).
 
-- Run `python -m study.run_states` detached, then write the findings, with
-  commit and data hashes. Add the results to the Lab page after that.
+- Literature check before calling anything new: has EM, or another
+  label-shift method, been tested on many real clinical targets and failed
+  this often?
+- A frozen test of the two post-hoc patterns (repair only pays outside an
+  observed over expected band; EM only helps when the ratio passes 2), on new
+  data such as SINAN 2026 once it is published.
+- A fixed version of S1 for that test: compare cases within each n, not pooled.
+- Add the state results to the Lab page.
 
 ## Research ideas (suggestions, not started)
 

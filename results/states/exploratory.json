@@ -1,0 +1,63 @@
+{
+ "commit_of_results": "54acac72e85420e01606a7d1612595f3087198e1",
+ "cases_within_cells": {
+  "cells": 226,
+  "share_negative": 0.681,
+  "median_rho": -0.084,
+  "by_n": {
+   "100": {
+    "cells": 47,
+    "median_rho": -0.184,
+    "share_negative": 0.787
+   },
+   "250": {
+    "cells": 47,
+    "median_rho": -0.151,
+    "share_negative": 0.723
+   },
+   "500": {
+    "cells": 47,
+    "median_rho": -0.118,
+    "share_negative": 0.681
+   },
+   "1000": {
+    "cells": 45,
+    "median_rho": -0.047,
+    "share_negative": 0.667
+   },
+   "2500": {
+    "cells": 40,
+    "median_rho": -0.011,
+    "share_negative": 0.525
+   }
+  }
+ },
+ "miscalibration_and_repair": {
+  "unrepaired": [
+   "MS 2023",
+   "MT 2023",
+   "DF 2023",
+   "PA 2024",
+   "CE 2024",
+   "MG 2025",
+   "SC 2025",
+   "RS 2025"
+  ],
+  "unrepaired_oe_range": [
+   0.8463,
+   1.1165
+  ],
+  "largest_off_unrepaired": 0.167,
+  "smallest_off_repaired": 0.176,
+  "em_helped": [
+   "AP 2024",
+   "PI 2024",
+   "BA 2024",
+   "DF 2024",
+   "ES 2025",
+   "PR 2025"
+  ],
+  "oe_above_2": 13,
+  "em_helped_with_oe_at_most_2": 0
+ }
+}

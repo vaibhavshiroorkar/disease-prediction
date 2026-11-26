@@ -48,7 +48,11 @@ Their pages could not be opened, so nothing is claimed from them.
 - **Possibly new (assumed, limited search):** the first leave-one-region-out
   and later-year test of SINAN severity models with calibration measured; and
   EM compared with labelled updates on the same clinical targets, where it
-  failed on 7 of 10 although the source models were sigmoid-calibrated.
+  failed on 7 of 10 although the source models were sigmoid-calibrated. The
+  state study repeated this at scale: EM failed on 41 of 47 state-years, and
+  a covariate-shift score did not predict where
+  ([findings-states.md](findings-states.md)). Not yet checked against the
+  label-shift literature.
 
 ## Choices the literature settled
 
