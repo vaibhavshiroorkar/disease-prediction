@@ -2,31 +2,12 @@
 
 from __future__ import annotations
 
-import io
-
 import numpy as np
 import pytest
-from PIL import Image, ImageDraw
 
 from app.cells import FEATURE_NAMES, MAX_IMAGE_BYTES, cell_features, read_image
 from ml.malaria import patient_of, per_patient
-
-
-def cell(parasite: bool, size: int = 120) -> Image.Image:
-    """A pale pink disc on black, like the NIH crops, with an optional stained dot."""
-    image = Image.new("RGB", (size, size), "black")
-    draw = ImageDraw.Draw(image)
-    draw.ellipse([8, 8, size - 8, size - 8], fill=(214, 160, 170))
-    if parasite:
-        # Scaled with the cell, so the dot covers the same share at any size.
-        draw.ellipse([0.42 * size, 0.38 * size, 0.58 * size, 0.54 * size], fill=(110, 40, 130))
-    return image
-
-
-def png_bytes(image: Image.Image) -> bytes:
-    buffer = io.BytesIO()
-    image.save(buffer, format="PNG")
-    return buffer.getvalue()
+from tests.images import cell, png_bytes
 
 
 def test_every_feature_has_a_name() -> None:

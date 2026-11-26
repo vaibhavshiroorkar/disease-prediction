@@ -55,7 +55,7 @@ That is a small leak, the same one the first study had.
 ## Updating methods and design
 
 The six methods of the first study, unchanged: none, em, intercept, platt,
-refit, rate (see [protocol.md](protocol.md) and `study/updating.py`).
+refit, rate (see [protocol.md](protocol.md) and `study/shared/updating.py`).
 
 Each repeat splits the target in half at random, stratified on the label. One
 half is the pool, the other the test half, capped at 20,000 rows.
@@ -142,7 +142,7 @@ None yet.
   - 2023: `9a376a7be58b3c0e84bfac82474515f407fd7f135eae19660515428e6ccc0b9c`
   - 2024: `1b6b7bf7f6b1fdab4ed2314edc2f57919c33b8103988383f22b7d4776c4a931a`
   - 2025: `dbe3597d384ee2588c1bf38205cdabd681aec97df363a48dc2d1e0dd198ecc63`
-- Details the protocol left open, fixed in the code (`study/states.py`)
+- Details the protocol left open, fixed in the code (`study/states.py` at the time, now split across `study/states/`)
   before any run:
   - The shift score compares the source rows with the pool of repeat 0, at
     most 20,000 rows a side, balanced. The classifier is gradient boosting with

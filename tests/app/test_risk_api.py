@@ -10,7 +10,7 @@ from app.registry import TABULAR_RISK_MODELS, registry
 from app.routers.risk import risk_band
 from app.schemas import RISK_REQUESTS
 from tests.conftest import requires_db, requires_model
-from tests.test_malaria import cell, png_bytes
+from tests.images import cell, png_bytes
 
 DENGUE_SIGNS = [
     "fever", "myalgia", "headache", "rash", "vomiting", "nausea", "back_pain", "conjunctivitis",

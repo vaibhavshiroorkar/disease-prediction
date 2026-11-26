@@ -31,12 +31,16 @@ repair it. The answer is in [research/findings.md](research/findings.md).
 ## How the parts connect
 
 ```
-data/raw  ->  ml/ (train)  ->  models/*.joblib  ->  app/ (API and website)
-    |                              |                   ^
-    +--->  study/run.py            +--> study/lab_data.py
-                |                            ^    |
-                +--> results/transfer/ ------+    +--> app/static/lab-data.json
+data/raw --> ml/ (train) --> models/*.joblib --> app/ (API and website)
+   |                              |                  ^
+   |                              v                  |
+   +--> study/transfer/ --> results/transfer/ --> study/lab_data.py --> app/static/lab-data.json
+   +--> study/states/   --> results/states/   ----^
+        (both use study/shared/: draws, updates, provenance)
 ```
+
+Tests mirror the code: `tests/app/`, `tests/ml/`, `tests/study/`, and
+`tests/browser/` for the website.
 
 `app/` never imports `ml/` or `study/`.
 
@@ -54,18 +58,18 @@ data/raw  ->  ml/ (train)  ->  models/*.joblib  ->  app/ (API and website)
 
 ```powershell
 python -m scripts.download_data
-python -m study.run
+python -m study.transfer.run
 python -m study.lab_data
-python -m study.run_states
+python -m study.states.run
 python -m pytest
 ```
 
-`study.run_states` is the state study. It saves each target as it finishes and
+`study.states.run` is the state study. It saves each target as it finishes and
 resumes from there. `--smoke DIR` runs four targets with three repeats to check
-the code. `study.true_rate` reruns EM's correction with the true local rate,
-after `study.run_states` (6 minutes).
+the code. `study.states.true_rate` reruns EM's correction with the true local rate,
+after `study.states.run` (6 minutes).
 
-`study.run` took 12 minutes on 12 cores. It refuses to run on uncommitted code,
+`study.transfer.run` took 12 minutes on 12 cores. It refuses to run on uncommitted code,
 and records the commit and a SHA-256 of each raw file. Use the library versions
 named in the report. Another scikit-learn may give slightly different numbers.
 
@@ -76,6 +80,6 @@ named in the report. Another scikit-learn may give slightly different numbers.
 | The first EM results looked like a bug (log loss 3.1 at VA) | Checked against a separate grid search | one check | It was real. The grid check is now a test |
 | The lab page scrolled sideways on phones | The browser test | one fix | Grid columns may shrink; tables scroll inside their box |
 | Chart text was unreadable on phones and "100%" was cut off | Looking at screenshots | one fix | Narrower drawing on phones, wider margin |
-| Local browser tests could not start: Chromium not installed | The run failed | one change | `BROWSER_CHANNEL=msedge` uses installed Edge |
+| Local browser tests could not start: Chromium not installed | The run failed, and later a pre-push hook | one change, then one push retry | `scripts/ci_local.sh` uses installed Edge on Windows |
 | The findings draft said small samples hurt in 7 of 10 targets | Recounting from the report: 8 | one fix | Recount each claim from `report.json` before committing |
 | State study S1 pooled draws across every n, so "few cases" mostly meant "few patients" | Reading the result critically after the run | S1 cannot answer its question | An exploratory within-n check; the next protocol compares within each n |

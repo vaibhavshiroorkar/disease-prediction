@@ -3,7 +3,7 @@
 Run on 2026-11-26 by the [frozen protocol](protocol-states.md), on commit
 54acac7, in 20 minutes on 12 cores. Every number is in
 `results/states/report.json` (frozen tests) or `exploratory.json` (checks made
-after the results were seen, by `python -m study.explore_states`). Both files
+after the results were seen, by `python -m study.states.explore`). Both files
 record the commit. The report also records the data hashes, seed and library
 versions. **Verified** means measured in this run. **Assumed** means our
 reading of it.
@@ -89,7 +89,7 @@ These are hypotheses for a next study. They were not frozen in advance.
 
 EM does two things. It estimates the local rate from unlabelled predictions,
 then shifts every prediction toward that rate. A later check,
-`python -m study.true_rate`, gave the same shift the true local rate instead.
+`python -m study.states.true_rate`, gave the same shift the true local rate instead.
 It reused the saved test halves and EM samples. All 47 refitted source
 models matched the saved run to within 0.0001 in log loss (verified).
 

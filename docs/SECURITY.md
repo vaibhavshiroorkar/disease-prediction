@@ -16,9 +16,9 @@ dependency changes. Checked 2026-11-25 by reading the code and running the tests
 |---|---|---|
 | A joblib file runs code when loaded | Only files committed in `models/` are loaded, never an upload or a download. Anyone who can change `models/` can run code on the server, so review model changes like code | Load paths verified in `app/registry.py` and `study/lab_data.py`. Artifacts are not signed: open |
 | Hostile image | 2 MB and 4 million pixel limits; PNG and JPEG only | verified in `app/cells.py`. A decoder bug in Pillow is unknown risk |
-| Large request bodies | Refused above 2.1 MB while streaming | verified by `tests/test_hosting.py` |
-| Flooding | 60 requests a minute per client on prediction and admin routes, counted in one process | verified by `tests/test_hosting.py`. Resets on restart and does not cover several replicas |
-| Reading stored predictions | Admin key needed; routes return 503 when no key is set | verified by `tests/test_hosting.py` |
+| Large request bodies | Refused above 2.1 MB while streaming | verified by `tests/app/test_hosting.py` |
+| Flooding | 60 requests a minute per client on prediction and admin routes, counted in one process | verified by `tests/app/test_hosting.py`. Resets on restart and does not cover several replicas |
+| Reading stored predictions | Admin key needed; routes return 503 when no key is set | verified by `tests/app/test_hosting.py` |
 | Script injection | Content-Security-Policy allows own files only; the pages set text, never HTML | verified in `app/security.py`; the lab builds nodes with `textContent` |
 | Lab data leaks patients | `lab-data.json` holds counts, bin averages and study means only | verified in `study/lab_data.py`. Small bins can hold few rows, from public datasets |
 | Altered downloads | The study records a SHA-256 for every raw file it read | verified in `results/transfer/report.json`. `scripts/download_data.py` does not check hashes: open |

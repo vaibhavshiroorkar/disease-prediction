@@ -123,7 +123,7 @@ class HealthResponse(BaseModel):
 
 
 # Risk model requests. The field names, ranges and choices mirror the
-# feature_specs saved in each artifact, and tests/test_api.py checks that they
+# feature_specs saved in each artifact, and tests/app/test_api.py checks that they
 # still agree. Unknown fields are rejected rather than ignored: a client that
 # sends "cholesterol" instead of "chol" should hear about it, not get a risk
 # computed with cholesterol silently imputed.

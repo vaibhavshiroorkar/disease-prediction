@@ -1,6 +1,6 @@
 """Does EM fail because its rate estimate is wrong, or because the correction is?
 
-    python -m study.true_rate
+    python -m study.states.true_rate
 
 Exploratory, run after the state study's results were seen. It refits each
 state's source model as run_states does, redraws the same test halves and EM
@@ -25,29 +25,19 @@ Writes results/states/true_rate.json. See docs/research/findings-states.md.
 
 from __future__ import annotations
 
-import json
-import time
 from typing import Any
 
 import numpy as np
 from scipy.optimize import brentq
 from scipy.special import expit
-from sklearn.metrics import log_loss
 
-from ml.clinical_data import DENGUE_FEATURES
-from ml.clinical_model import fixed
-from ml.config import MODELS_DIR, RANDOM_SEED, ROOT
-from study.run import _write_json, provenance
-from study.states import SOURCE_YEAR, em_change, read_year, source_rows
-from study.transfer import split_target
-from study.updating import em_rate, reweight, to_logit
+from study.shared.repeats import clipped_log_loss, draw
+from study.shared.updating import em_rate, reweight, to_logit
+from study.states.experiment import Source
+from study.states.rechecks import check_reproduces, run_check
 
-OUT = ROOT / "results" / "states"
 ESTIMATE_FAILED, CORRECTION_FAILED = 0.75, 0.25
 METHODS = ("none", "em", "true_prior", "true_mean")
-# The refitted model must give the saved run's numbers, or this compares
-# against a different model.
-REPRODUCE_TOL = 1e-4
 
 
 def mean_matching_shift(p: np.ndarray, rate: float) -> float:
@@ -56,15 +46,10 @@ def mean_matching_shift(p: np.ndarray, rate: float) -> float:
     return brentq(lambda s: expit(z + s).mean() - rate, -30.0, 30.0)
 
 
-def _loss(y: np.ndarray, p: np.ndarray) -> float:
-    return float(log_loss(y, np.clip(p, 1e-6, 1 - 1e-6), labels=[0, 1]))
-
-
 def one_draw(p: np.ndarray, y: np.ndarray, source_rate: float, n: int, repeat: int) -> dict[str, float]:
-    """The test half and EM sample of one_repeat in study.transfer, plus the two bounds."""
-    seed = RANDOM_SEED + repeat
-    pool, test = split_target(y, seed)
-    local = np.random.default_rng(seed).permutation(pool)[:n]
+    """The test half and EM sample of one_repeat in study.shared.repeats, plus the two bounds."""
+    pool, test, order = draw(y, repeat)
+    local = order[:n]
     true_rate = float(y.mean())
     estimate = em_rate(p[local], source_rate)
     p_test = p[test]
@@ -74,27 +59,21 @@ def one_draw(p: np.ndarray, y: np.ndarray, source_rate: float, n: int, repeat: i
         "true_prior": reweight(p_test, source_rate, true_rate),
         "true_mean": expit(to_logit(p_test) + mean_matching_shift(p[pool], true_rate)),
     }
-    row = {m: _loss(y[test], updated[m]) for m in METHODS}
+    row = {m: clipped_log_loss(y[test], updated[m]) for m in METHODS}
     row["em_rate"] = estimate
     return row
 
 
-def run_target(report: dict[str, Any], p: np.ndarray, y: np.ndarray, source_rate: float) -> dict[str, Any]:
+def run_target(report: dict[str, Any], p: np.ndarray, y: np.ndarray, source: Source) -> dict[str, Any]:
     n = report["sizes"][-1]
-    draws = [one_draw(p, y, source_rate, n, r) for r in range(report["repeats"])]
+    draws = [one_draw(p, y, source.rate, n, r) for r in range(report["repeats"])]
     mean = {m: float(np.mean([d[m] for d in draws])) for m in METHODS}
-    saved_none = report["curves"]["none"][str(n)]["log_loss"]["mean"]
-    if abs(mean["none"] - saved_none) > REPRODUCE_TOL:
-        raise RuntimeError(
-            f"{report['name']}: refitted model gives {mean['none']:.5f}, saved {saved_none:.5f}"
-        )
-    if abs((mean["em"] - mean["none"]) - em_change(report)) > REPRODUCE_TOL:
-        raise RuntimeError(f"{report['name']}: EM change does not match the saved run")
+    check_reproduces(report, mean)
     return {
         "name": report["name"],
         "n": n,
         "observed_over_expected": report["observed_over_expected"],
-        "source_rate": round(source_rate, 5),
+        "source_rate": round(source.rate, 5),
         "true_rate": round(float(y.mean()), 5),
         "mean_predicted": round(float(p.mean()), 5),
         "em_rate_median": round(float(np.median([d["em_rate"] for d in draws])), 5),
@@ -128,39 +107,7 @@ def summarize(targets: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 def main() -> int:
-    started = time.perf_counter()
-    receipt = provenance()
-    if receipt["uncommitted_code"]:
-        raise SystemExit("commit study/, ml/ and app/ first, so the result names the code that made it")
-    report = json.loads((OUT / "report.json").read_text(encoding="utf-8"))
-    params = json.loads((MODELS_DIR / "dengue_summary.json").read_text(encoding="utf-8"))["metrics"][
-        "chosen_params"
-    ]
-    years = {year: read_year(year) for year in sorted({SOURCE_YEAR, *(t["year"] for t in report["targets"])})}
-    print(f"{time.perf_counter() - started:5.0f}s read data", flush=True)
-
-    results = []
-    by_state: dict[str, list[dict[str, Any]]] = {}
-    for target in report["targets"]:
-        by_state.setdefault(target["state"], []).append(target)
-    for state, targets in sorted(by_state.items()):
-        X_s, y_s = source_rows(years[SOURCE_YEAR], state)
-        model = fixed("boosting", DENGUE_FEATURES, True, params).fit(X_s, y_s)
-        for target in targets:
-            year = years[target["year"]]
-            held = year.state == state
-            p = model.predict_proba(year.X[held].reset_index(drop=True))[:, 1]
-            result = run_target(target, p, year.y[held], float(y_s.mean()))
-            results.append(result)
-            print(f"{time.perf_counter() - started:5.0f}s {result['name']}: {result['change_from_none']}",
-                  flush=True)
-
-    receipt["seconds"] = round(time.perf_counter() - started)
-    out = {"provenance": receipt, "commit_of_results": report["provenance"]["commit"],
-           "summary": summarize(results), "targets": results}
-    _write_json(OUT / "true_rate.json", out)
-    print(json.dumps(out["summary"], indent=1))
-    return 0
+    return run_check("true_rate.json", run_target, summarize, oof=False)
 
 
 if __name__ == "__main__":

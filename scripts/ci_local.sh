@@ -11,7 +11,11 @@ python_bin=.venv/Scripts/python
 node --check app/static/app.js
 node --check app/static/lab.js
 "$python_bin" -m pytest -ra
-# BROWSER_CHANNEL=msedge uses installed Edge instead of downloaded Chromium.
+# On Windows, use installed Edge unless BROWSER_CHANNEL says otherwise. The
+# pre-push hook failed here once because Playwright's Chromium is not downloaded.
+case "$(uname -s)" in
+  MINGW* | MSYS* | CYGWIN*) export BROWSER_CHANNEL="${BROWSER_CHANNEL:-msedge}" ;;
+esac
 RUN_BROWSER_TESTS=1 "$python_bin" -m pytest tests/browser -ra
 if [ "${CI_DOCKER:-0}" = 1 ]; then
   docker build -t disease-prediction:test .

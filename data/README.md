@@ -34,8 +34,8 @@ a loader in `ml/datasets.py`, `ml/clinical_data.py` or `ml/malaria.py`.
 ## Known defects in the raw files
 
 Handled in `ml/datasets.py`, `ml/clinical_data.py` and `ml/malaria.py`, tested
-in `tests/test_datasets.py`, `tests/test_clinical_data.py` and
-`tests/test_malaria.py`.
+in `tests/ml/test_datasets.py`, `tests/ml/test_clinical_data.py` and
+`tests/ml/test_malaria.py`.
 
 **Symptom training file**
 - A trailing comma on every row produces an unnamed empty column.

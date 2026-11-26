@@ -1,6 +1,6 @@
 """Exploratory checks on the state study, written after its results were seen.
 
-    python -m study.explore_states
+    python -m study.states.explore
 
 Reads results/states/ and writes results/states/exploratory.json. Nothing here
 is a test of a frozen hypothesis. See docs/research/findings-states.md.
@@ -15,8 +15,8 @@ import pandas as pd
 from scipy.stats import spearmanr
 
 from ml.config import ROOT
-from study.run import _write_json
-from study.states import em_change
+from study.shared.provenance import write_json
+from study.states.verdicts import em_change
 
 OUT = ROOT / "results" / "states"
 KEYS = ["target", "repeat", "n"]
@@ -77,7 +77,7 @@ def main() -> int:
         "cases_within_cells": cases_within_cells(draws),
         "miscalibration_and_repair": miscalibration_and_repair(report["targets"]),
     }
-    _write_json(OUT / "exploratory.json", result)
+    write_json(OUT / "exploratory.json", result)
     print(json.dumps(result, indent=1))
     return 0
 

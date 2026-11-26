@@ -7,9 +7,9 @@ import pandas as pd
 import pytest
 
 from ml.clinical_data import DENGUE_FEATURES
-from study.transfer import one_repeat
-from study.true_rate import mean_matching_shift, one_draw, summarize
-from study.updating import to_logit
+from study.shared.repeats import one_repeat
+from study.shared.updating import to_logit
+from study.states.true_rate import mean_matching_shift, one_draw, summarize
 
 
 def _data(seed: int = 3, rows: int = 4000):
@@ -28,9 +28,9 @@ def test_mean_matching_shift_hits_the_rate() -> None:
 def test_draw_repeats_the_study_draw() -> None:
     """none and em must be the very numbers one_repeat gave, or the comparison is off."""
     y, p = _data()
-    holder = type("H", (), {"features": DENGUE_FEATURES[:1]})()
     X = pd.DataFrame({"age": np.zeros(len(y))})
-    study = {r["method"]: r["log_loss"] for r in one_repeat(holder, X, y, p, 0.05, 0.2, [500], 4)}
+    rows = one_repeat(DENGUE_FEATURES[:1], X, y, p, 0.05, 0.2, [500], 4)
+    study = {r["method"]: r["log_loss"] for r in rows}
     mine = one_draw(p, y, 0.05, 500, 4)
     assert mine["none"] == pytest.approx(study["none"], abs=1e-12)
     assert mine["em"] == pytest.approx(study["em"], abs=1e-12)

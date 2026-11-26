@@ -75,7 +75,7 @@ EM landed near the truth in Switzerland (0.939 against 0.935 real). At VA it
 went to 100% and log loss rose from 0.51 to 3.14. In the Northeast it estimated
 32% against 5.3% real. A direct grid search over the likelihood gave the same
 answers, so this is the method and not our code (**verified**;
-`tests/test_study.py` keeps the check). Its assumption, that patients in each
+`tests/study/test_study.py` keeps the check). Its assumption, that patients in each
 class look the same everywhere, does not hold in these targets (**assumed**
 cause). From unlabelled data alone, a clinic could not tell the good case from
 the bad one.

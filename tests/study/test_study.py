@@ -6,15 +6,16 @@ import numpy as np
 import pytest
 from scipy.special import expit, logit
 
-from study.audits import site_rate_scores, within_site_auc
-from study.transfer import repair_size, score, verdicts
-from study.updating import (
+from study.shared.repeats import repair_size, score
+from study.shared.updating import (
     apply_shift_slope,
     em_rate,
     fit_shift_slope,
     local_rate,
     reweight,
 )
+from study.transfer.audits import site_rate_scores, within_site_auc
+from study.transfer.experiment import verdicts
 
 
 @pytest.fixture()

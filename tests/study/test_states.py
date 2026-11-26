@@ -7,18 +7,11 @@ import pandas as pd
 import pytest
 
 from ml.clinical_data import DENGUE_FEATURES
-from study import states
-from study.states import (
-    Year,
-    cases_split,
-    choose_targets,
-    guard_threshold,
-    shift_score,
-    sizes_for,
-    source_rows,
-    verdicts,
-)
-from study.transfer import one_repeat
+from study.shared.repeats import one_repeat
+from study.states import data
+from study.states.data import Year, choose_targets, source_rows
+from study.states.experiment import cases_split, shift_score, sizes_for
+from study.states.verdicts import bootstrap_by_state, guard_threshold, verdicts
 
 
 def test_inclusion_rule_needs_both_counts() -> None:
@@ -34,7 +27,7 @@ def test_inclusion_rule_needs_both_counts() -> None:
 
 
 def test_source_rows_never_hold_the_target_state(monkeypatch) -> None:
-    monkeypatch.setattr(states, "SOURCE_SAMPLE", 50)
+    monkeypatch.setattr(data, "SOURCE_SAMPLE", 50)
     rng = np.random.default_rng(0)
     state = np.array(["35"] * 100 + ["29"] * 100)
     year = Year(pd.DataFrame({"age": np.arange(200.0)}), (rng.random(200) < 0.3).astype(int), state)
@@ -61,9 +54,8 @@ def test_each_draw_records_its_local_cases() -> None:
     rng = np.random.default_rng(2)
     y = (rng.random(2000) < 0.1).astype(int)
     p = np.clip(0.1 + 0.3 * y + rng.normal(0, 0.05, 2000), 0.01, 0.99)
-    holder = type("H", (), {"features": DENGUE_FEATURES[:1]})()
     X = pd.DataFrame({"age": rng.normal(40, 10, 2000)})
-    rows = one_repeat(holder, X, y, p, 0.1, 0.2, [100, 250], 0)
+    rows = one_repeat(DENGUE_FEATURES[:1], X, y, p, 0.1, 0.2, [100, 250], 0)
     by_n = {r["n"]: r["local_cases"] for r in rows}
     assert 0 < by_n[100] <= by_n[250] <= 250
     assert len({(r["n"], r["local_cases"]) for r in rows}) == 2
@@ -141,5 +133,5 @@ def test_state_bootstrap_keeps_a_state_together() -> None:
         seen.append(names)
         return 0.0
 
-    states._bootstrap_by_state(reports, record)
+    bootstrap_by_state(reports, record)
     assert all(names.count("a23") == names.count("a25") for names in seen)
