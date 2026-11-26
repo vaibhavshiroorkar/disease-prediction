@@ -78,10 +78,24 @@ Each state appears once in 2026, so the bootstrap for T3 resamples targets,
 
 ## Deviations
 
-None yet.
+- 2026-11-27: added 2026 to `DENGUE_STUDY_YEARS` in `ml/config.py`, so the
+  downloader fetches the file and the provenance hashes it. The protocol
+  named this file from the start; no analysis code or pass mark changed.
 
 ## Recorded before analysis
 
-To be filled in when the file is downloaded, in its own commit: the SHA-256,
-the row count, the targets that pass the inclusion rule, and the commit of the
-analysis code.
+Recorded on 2026-11-27, after the download and before any model scored a
+2026 row. Reading the file to count cases and apply the inclusion rule is all
+that was done with it.
+
+- File: `DENGBR26.csv.zip`, saved as `data/raw/dengue_sinan_2026.csv.zip`,
+  15,864,337 bytes (the size the server's headers gave before freezing).
+- SHA-256: `0c9ba29ff33573431b5198949c982a285b7233f26c09ef81dbb068460775e909`.
+- Rows: 489,197 notifications. 140,693 are lab-confirmed dengue under the
+  study's filter, 6,518 of them severe (4.6%).
+- No final class yet: 6.11% of rows.
+- Targets: 15 states pass, so every test is testable on count. They are PA,
+  TO, MA, PI, CE, RN, PE, BA, MG, ES, RJ, SP, PR, MT and GO. The nearest
+  misses were PB (2,341 cases, 85 severe) and AL (1,990, 64).
+- Analysis code: `study/states/retest.py` as committed in 027f362, unchanged.
+  It runs on the commit that records this section.

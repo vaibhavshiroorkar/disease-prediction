@@ -23,9 +23,10 @@ HEART_SITES = ("cleveland", "hungarian", "switzerland", "va")
 # The dengue model trains on the first year and is checked on the second. Two
 # separate epidemics are a harder test than a random split of one.
 DENGUE_YEARS = (2023, 2025)
-# The state study (docs/research/protocol-states.md) also uses 2024. The served
-# model does not.
-DENGUE_STUDY_YEARS = (2023, 2024, 2025)
+# The state study (docs/research/protocol-states.md) also uses 2024, and its
+# retest (protocol-2026.md) uses the preliminary 2026 file. The served model
+# uses neither.
+DENGUE_STUDY_YEARS = (2023, 2024, 2025, 2026)
 
 
 @dataclass(frozen=True)
