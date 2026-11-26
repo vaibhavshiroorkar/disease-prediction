@@ -142,5 +142,19 @@ None yet.
   - 2023: `9a376a7be58b3c0e84bfac82474515f407fd7f135eae19660515428e6ccc0b9c`
   - 2024: `1b6b7bf7f6b1fdab4ed2314edc2f57919c33b8103988383f22b7d4776c4a931a`
   - 2025: `dbe3597d384ee2588c1bf38205cdabd681aec97df363a48dc2d1e0dd198ecc63`
+- Details the protocol left open, fixed in the code (`study/states.py`)
+  before any run:
+  - The shift score compares the source rows with the pool of repeat 0, at
+    most 20,000 rows a side, balanced. The classifier is gradient boosting with
+    default settings, which reads missing values as they are.
+  - The guard's candidate cuts are 0 (never EM) and just above each stage A
+    score. Ties go to the lowest cut, which uses EM least.
+  - S2's coefficient of variation is the standard deviation over the mean,
+    without a small-sample correction.
+  - Inputs are held as 32-bit floats to fit 2024 in memory.
+- A smoke run checked the code on 4 targets (RO 2023, CE 2023, PA 2024,
+  AP 2024) with 3 repeats, and its output was seen. No rule, threshold or
+  pass mark changed after it. Its numbers are not results: the full run
+  redoes these targets with 50 repeats.
 - The 2024 file holds 6,564,924 notifications and 2,197,313 lab-confirmed
   cases, about three times 2023. Only label counts per state were looked at.

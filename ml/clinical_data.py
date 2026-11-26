@@ -401,7 +401,7 @@ def _read_dengue_year(
     year: int, sample: int | None, notes: list[str]
 ) -> tuple[pd.DataFrame, pd.Series, pd.Series]:
     raw = _read(f"dengue_{year}", usecols=DENGUE_COLUMNS, dtype=str)
-    confirmed = raw[(raw["CRITERIO"] == "1") & raw["CLASSI_FIN"].isin(DENGUE_CONFIRMED)]
+    confirmed = dengue_confirmed(raw)
     notes.append(f"{year}: {len(raw)} notifications, {len(confirmed)} confirmed by a lab test")
 
     y = confirmed["CLASSI_FIN"].isin(DENGUE_SEVERE).astype(int)
@@ -416,6 +416,18 @@ def _read_dengue_year(
         y = y.loc[confirmed.index]
         notes.append(f"{year}: sampled {len(confirmed)} cases, stratified on the label")
 
+    X = dengue_inputs(confirmed)
+    regions = confirmed["SG_UF_NOT"].str[0].map(BRAZIL_REGIONS)
+    return X.reset_index(drop=True), y.reset_index(drop=True), regions.reset_index(drop=True)
+
+
+def dengue_confirmed(raw: pd.DataFrame) -> pd.DataFrame:
+    """Lab-confirmed cases only: CRITERIO 1 and a confirmed final class."""
+    return raw[(raw["CRITERIO"] == "1") & raw["CLASSI_FIN"].isin(DENGUE_CONFIRMED)]
+
+
+def dengue_inputs(confirmed: pd.DataFrame) -> pd.DataFrame:
+    """The 25 first-visit inputs from raw SINAN columns, row for row."""
     X = pd.DataFrame(index=confirmed.index)
     X["age"] = _sinan_age(confirmed["NU_IDADE_N"])
     X["sex"] = confirmed["CS_SEXO"].map({"M": 1.0, "F": 0.0})
@@ -430,9 +442,7 @@ def _read_dengue_year(
     for column, (name, _, _) in [*DENGUE_SIGNS.items(), *DENGUE_CONDITIONS.items()]:
         # 1 yes, 2 no, 9 or blank unknown.
         X[name] = confirmed[column].map({"1": 1.0, "2": 0.0})
-
-    regions = confirmed["SG_UF_NOT"].str[0].map(BRAZIL_REGIONS)
-    return X.reset_index(drop=True), y.reset_index(drop=True), regions.reset_index(drop=True)
+    return X
 
 
 def load_dengue(sample: int | None = DENGUE_SAMPLE, external_sample: int | None = DENGUE_EXTERNAL_SAMPLE

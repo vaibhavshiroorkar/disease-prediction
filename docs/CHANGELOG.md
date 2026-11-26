@@ -8,6 +8,10 @@ Semantic versions, newest first.
   code: four hypotheses and a held-out test of an EM guard.
 - Added SINAN 2024 as a study-only download (187 MB). With it the state study
   has 47 targets. The served model still uses 2023 and 2025 only.
+- State study code: `study/states.py` and `study/run_states.py`, with tests.
+  It reads SINAN in chunks, fits one source model per state, writes the EM
+  guard before stage B and resumes after a stop. Every draw in both studies
+  now records its local severe cases.
 - Compared with the closest published work. Withdrew the claim that the local
   sample-size question was new, and recorded what could still make a paper.
 

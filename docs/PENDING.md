@@ -13,14 +13,8 @@ Finished items move to [CHANGELOG.md](CHANGELOG.md).
 
 Protocol: [research/protocol-states.md](research/protocol-states.md).
 
-1. State loader: keep the state code, apply the inclusion rule, list the
-   excluded state-years with counts.
-2. Shift score: source rows against target pool rows, 5-fold AUC.
-3. Runner: stage A, write the EM guard threshold, then stage B. Record the
-   local severe cases in every draw.
-4. Verdicts S1 to S4, the two replications, state-level bootstrap. Tests for
-   each piece.
-5. Run, then write the findings, with commit and data hashes.
+- Run `python -m study.run_states` detached, then write the findings, with
+  commit and data hashes. Add the results to the Lab page after that.
 
 ## Research ideas (suggestions, not started)
 

@@ -64,14 +64,20 @@ def local_refit(data: ClinicalDataset, X: pd.DataFrame, y: np.ndarray, X_test: p
     return model.predict_proba(X_test[names])[:, 1]
 
 
+def split_target(y: np.ndarray, seed: int) -> tuple[np.ndarray, np.ndarray]:
+    """Half the target is the pool local patients come from, half the test, capped."""
+    pool, test = train_test_split(np.arange(len(y)), test_size=0.5, stratify=y, random_state=seed)
+    if len(test) > TEST_CAP:
+        _, test = train_test_split(test, test_size=TEST_CAP, stratify=y[test], random_state=seed)
+    return pool, test
+
+
 def one_repeat(
     data: ClinicalDataset, X: pd.DataFrame, y: np.ndarray, p: np.ndarray,
     source_rate: float, threshold: float, sizes: list[int], repeat: int,
 ) -> list[dict[str, Any]]:
     seed = RANDOM_SEED + repeat
-    pool, test = train_test_split(np.arange(len(y)), test_size=0.5, stratify=y, random_state=seed)
-    if len(test) > TEST_CAP:
-        _, test = train_test_split(test, test_size=TEST_CAP, stratify=y[test], random_state=seed)
+    pool, test = split_target(y, seed)
     order = np.random.default_rng(seed).permutation(pool)
     rows = []
     for n in sizes:
@@ -90,6 +96,7 @@ def one_repeat(
         for method in METHODS:
             rows.append(
                 {"repeat": repeat, "n": n, "method": method, "one_class": one_class,
+                 "local_cases": int(y_local.sum()),
                  **score(y[test], updated[method], threshold)}
             )
     return rows

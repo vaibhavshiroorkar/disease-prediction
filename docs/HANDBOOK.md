@@ -55,8 +55,13 @@ data/raw  ->  ml/ (train)  ->  models/*.joblib  ->  app/ (API and website)
 python -m scripts.download_data
 python -m study.run
 python -m study.lab_data
+python -m study.run_states
 python -m pytest
 ```
+
+`study.run_states` is the state study. It saves each target as it finishes and
+resumes from there. `--smoke DIR` runs four targets with three repeats to check
+the code.
 
 `study.run` took 12 minutes on 12 cores. It refuses to run on uncommitted code,
 and records the commit and a SHA-256 of each raw file. Use the library versions
