@@ -19,8 +19,9 @@ partly. Of the two questions in the protocol, the answer to the second is
 "not with this score". A later check found why EM failed: its estimate of the
 local rate was wrong. Given the true rate, the same correction helped in 40
 of 47. A second label-free estimate, BBSE, failed too (0 of 47 helped). A
-frozen retest on 2026 data is written down in
-[protocol-2026.md](protocol-2026.md) and has not run yet.
+frozen retest on 15 state-years of 2026 data
+([protocol-2026.md](protocol-2026.md)) supported five of those findings and
+the BBSE result. The sixth could not be tested (see "The 2026 retest" below).
 
 ## Targets
 
@@ -157,6 +158,56 @@ estimate we tried is safe. The true rate fixes most of the problem, and it is
 one number. A state's surveillance count of severe cases, or a few hundred
 labelled patients, gives it.
 
+## The 2026 retest
+
+Run on 2026-11-27 by `python -m study.states.retest`, on commit 5681a89, in
+15 minutes. The [protocol](protocol-2026.md) was frozen and its code committed
+before the file was downloaded. The file's hash and the 15 targets were
+committed before any model scored a 2026 row. All numbers are verified in
+`results/retest-2026/report.json`.
+
+| Test | Claim | 2026 result | Verdict |
+|---|---|---|---|
+| T1 | EM hurts in most new state-years | 12 of 15, bar 75% | supported |
+| T2 | the correction works with the true rate | `true_prior` helped in 10 of the 12 where EM hurt, bar 75% | supported |
+| T3 | EM's harm tracks how wrong its rate is | Spearman 0.93, interval 0.71 to 0.99 | supported |
+| T4 | a labelled repair pays only when the model is off | 2 targets inside the band, 3 needed | not testable |
+| T5 | EM helps only under large under-prediction | helped in 0 of the 7 with O/E at most 2, bar 10% | supported |
+| T6 | more local cases help within a fixed n | 78% of 68 cells, bar 60% | supported |
+| T7 | the BBSE result holds | "bbse fails here too" again | supported |
+
+- EM's median rate estimate was 2.25 times the true rate. It was within 0.8
+  to 1.25 of the truth in none of the 15 (verified).
+- EM helped in 3 targets: MA, RN and PR, all with O/E above 2.3. That fits
+  T5's pattern (verified).
+- The true-rate correction helped in 13 of 15. In the other two, MG and SP,
+  the true rate was within 2.5% of the source rate, so it barely moved
+  anything (verified).
+- BBSE: the hard version beat no update in 1 of 15 and the soft version in 3.
+  Soft BBSE beat EM in 12 of 15. No estimate got the rate within 0.8 to 1.25
+  in any target (verified).
+- T6 held at every n and was strongest at 250 (93% of cells). It faded at
+  2,500 (56%), as in 2023 to 2025 (verified).
+- T4 failed for want of targets, not on its merits. Only MG and SP had O/E
+  inside 0.85 to 1.12, and neither had a repair size. The 13 outside all did
+  (verified). That is the same pattern, but on two targets it is not a test.
+
+**ES 2026 shows the mechanism in one target.** Its severe rate rose from 4.2%
+in 2023 to 4.9%. The model's scores fell: mean score 0.023 to 0.020, and the
+share flagged at the source cut-off went from 0.71 to 0.64, below the source's
+own 0.66 (verified, by rescoring ES with its source model). With scores
+falling while the rate rose, EM and both BBSE versions put the rate at zero.
+EM raised log loss by 0.45, the largest harm in the retest. The true rate cut
+log loss by 0.015. Patients in 2026 were notified sooner after symptoms began
+(3.6 days against 4.7) and reported more symptoms. That may be why they looked
+lower-risk (assumed, not tested).
+
+What this adds (assumed): the main findings now hold on a year that was not
+seen when they were found, under rules written in advance. It is still the
+same people, code and source models, so it is a replication on new data, not
+an independent one. The 2026 file is preliminary: 6.1% of its rows had no
+final class yet.
+
 ## Limits
 
 - 47 targets from 27 states over three years share most of their training
@@ -181,6 +232,7 @@ venue as a negative result, not a journal as a new method (assumed, not
 checked against any venue's criteria). The true-rate check adds a mechanism:
 the rate estimate fails and the correction does not. That matches Chandra H et
 al. (2026), who corrected with the known rate and saw calibration improve. The
-BBSE check shows the failure is not specific to EM. The 2026 retest
-([protocol-2026.md](protocol-2026.md)) is frozen and its code committed; it
-would turn the post-hoc findings into tested ones.
+BBSE check shows the failure is not specific to EM. The 2026 retest turned
+five post-hoc findings and the BBSE result into tested ones, and left one
+untestable. That makes it a stronger workshop paper, still not a new method
+(assumed).

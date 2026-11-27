@@ -29,6 +29,10 @@ Semantic versions, newest first.
   The shared assumption fails, not one algorithm.
 - Froze a retest protocol for 2026 (`docs/research/protocol-2026.md`) and
   committed its code (`study/states/retest.py`) before downloading the data.
+- Ran the 2026 retest on 15 state-years of the preliminary 2026 file, with
+  the file's hash and targets committed first. T1, T2, T3, T5, T6 and T7
+  were supported. T4 was not testable (2 targets in the band). EM hurt in 12
+  of 15.
 - Lab page: a state-by-state section with the four repairs, a chart of rate
   error against harm, the six verdicts and every target.
 - Read Chandra H et al. (2026) in full and the Esuli et al. abstract.

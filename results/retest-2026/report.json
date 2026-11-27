@@ -1,0 +1,507 @@
+{
+ "provenance": {
+  "commit": "5681a89acb7bdff81d732f7f79b0f7bb31c47998",
+  "uncommitted_code": false,
+  "seed": 42,
+  "python": "3.13.12",
+  "scikit_learn": "1.9.0",
+  "numpy": "2.5.2",
+  "pandas": "3.0.5",
+  "data_sha256": {
+   "heart_cleveland.data": "a74b7efa387bc9d108d7d0115d831fe9b414b29ae7124f331b622b4efa0427c8",
+   "heart_hungarian.data": "d1ad108f785768cd3d7e82dc522e6f5a61eea93cccfb3a46ee8076f73fc3d796",
+   "heart_switzerland.data": "834a405ccf5b66ab4056bb77794adc8df0b7125186454c0a1d002d33c6c3b314",
+   "heart_va.data": "e7c93d8d0d2acdadfa4c5e8de768e2191e7f618b952e29623f1f0d5949ff6b8f",
+   "pima_diabetes.csv": "6bfe5d0f379d17a0e0819b996407e3c09bf80febd4287f2ed212190dfff154af",
+   "ilpd_liver.csv": "84feac16488de5cf89bd22bd802c77f25841fe93e9ddd32355683e94d46c3425",
+   "dengue_sinan_2023.csv.zip": "9a376a7be58b3c0e84bfac82474515f407fd7f135eae19660515428e6ccc0b9c",
+   "dengue_sinan_2024.csv.zip": "1b6b7bf7f6b1fdab4ed2314edc2f57919c33b8103988383f22b7d4776c4a931a",
+   "dengue_sinan_2025.csv.zip": "dbe3597d384ee2588c1bf38205cdabd681aec97df363a48dc2d1e0dd198ecc63",
+   "dengue_sinan_2026.csv.zip": "0c9ba29ff33573431b5198949c982a285b7233f26c09ef81dbb068460775e909"
+  },
+  "run_at": "2026-11-26T23:44:18+00:00",
+  "seconds": 892
+ },
+ "verdicts": {
+  "T1": {
+   "supported": true,
+   "testable": true,
+   "count": 12,
+   "of": 15
+  },
+  "T2": {
+   "supported": true,
+   "testable": true,
+   "count": 10,
+   "of": 12
+  },
+  "T3": {
+   "supported": true,
+   "testable": true,
+   "spearman": 0.9321,
+   "ci": [
+    0.7142,
+    0.9891
+   ],
+   "valid": 1000
+  },
+  "T4": {
+   "supported": false,
+   "testable": false,
+   "reason": "2 inside the band, 13 outside"
+  },
+  "T5": {
+   "supported": true,
+   "testable": true,
+   "count": 0,
+   "of": 7
+  },
+  "T6": {
+   "supported": true,
+   "testable": true,
+   "cells": 68,
+   "share_negative": 0.779,
+   "median_rho": -0.159,
+   "by_n": {
+    "100": {
+     "cells": 15,
+     "median_rho": -0.245,
+     "share_negative": 0.867
+    },
+    "250": {
+     "cells": 15,
+     "median_rho": -0.12,
+     "share_negative": 0.933
+    },
+    "500": {
+     "cells": 15,
+     "median_rho": -0.169,
+     "share_negative": 0.733
+    },
+    "1000": {
+     "cells": 14,
+     "median_rho": -0.153,
+     "share_negative": 0.714
+    },
+    "2500": {
+     "cells": 9,
+     "median_rho": -0.05,
+     "share_negative": 0.556
+    }
+   }
+  },
+  "T7": {
+   "supported": true,
+   "testable": true,
+   "before": "bbse fails here too",
+   "after": "bbse fails here too"
+  }
+ },
+ "targets": [
+  {
+   "name": "PA 2026",
+   "state": "15",
+   "oe": 1.5243,
+   "repaired": true,
+   "change": {
+    "em": 0.05128,
+    "true_prior": -0.00338
+   },
+   "em_rate_over_true": 3.1499,
+   "bbse": {
+    "name": "PA 2026",
+    "n": 1000,
+    "observed_over_expected": 1.5243,
+    "true_rate": 0.04418,
+    "rate_over_true": {
+     "em": 3.1499,
+     "bbse": 7.7587,
+     "bbse_soft": 2.6969
+    },
+    "change_from_none": {
+     "em": 0.05128,
+     "bbse": 0.25204,
+     "bbse_soft": 0.03643
+    }
+   }
+  },
+  {
+   "name": "TO 2026",
+   "state": "17",
+   "oe": 1.4339,
+   "repaired": true,
+   "change": {
+    "em": 0.11987,
+    "true_prior": -0.00149
+   },
+   "em_rate_over_true": 4.4254,
+   "bbse": {
+    "name": "TO 2026",
+    "n": 2500,
+    "observed_over_expected": 1.4339,
+    "true_rate": 0.0461,
+    "rate_over_true": {
+     "em": 4.4254,
+     "bbse": 6.5138,
+     "bbse_soft": 3.7178
+    },
+    "change_from_none": {
+     "em": 0.11987,
+     "bbse": 0.22217,
+     "bbse_soft": 0.09081
+    }
+   }
+  },
+  {
+   "name": "MA 2026",
+   "state": "21",
+   "oe": 2.6558,
+   "repaired": true,
+   "change": {
+    "em": -0.00251,
+    "true_prior": -0.02964
+   },
+   "em_rate_over_true": 1.9467,
+   "bbse": {
+    "name": "MA 2026",
+    "n": 1000,
+    "observed_over_expected": 2.6558,
+    "true_rate": 0.07518,
+    "rate_over_true": {
+     "em": 1.9467,
+     "bbse": 4.7505,
+     "bbse_soft": 1.4157
+    },
+    "change_from_none": {
+     "em": -0.00251,
+     "bbse": 0.18062,
+     "bbse_soft": -0.02222
+    }
+   }
+  },
+  {
+   "name": "PI 2026",
+   "state": "22",
+   "oe": 2.3334,
+   "repaired": true,
+   "change": {
+    "em": 0.01925,
+    "true_prior": -0.02156
+   },
+   "em_rate_over_true": 2.2523,
+   "bbse": {
+    "name": "PI 2026",
+    "n": 1000,
+    "observed_over_expected": 2.3334,
+    "true_rate": 0.07014,
+    "rate_over_true": {
+     "em": 2.2523,
+     "bbse": 2.9865,
+     "bbse_soft": 1.8616
+    },
+    "change_from_none": {
+     "em": 0.01925,
+     "bbse": 0.06951,
+     "bbse_soft": 0.00294
+    }
+   }
+  },
+  {
+   "name": "CE 2026",
+   "state": "23",
+   "oe": 1.2902,
+   "repaired": true,
+   "change": {
+    "em": 0.00634,
+    "true_prior": -0.00106
+   },
+   "em_rate_over_true": 1.6912,
+   "bbse": {
+    "name": "CE 2026",
+    "n": 2500,
+    "observed_over_expected": 1.2902,
+    "true_rate": 0.03351,
+    "rate_over_true": {
+     "em": 1.6912,
+     "bbse": 3.0359,
+     "bbse_soft": 1.6824
+    },
+    "change_from_none": {
+     "em": 0.00634,
+     "bbse": 0.02956,
+     "bbse_soft": 0.00631
+    }
+   }
+  },
+  {
+   "name": "RN 2026",
+   "state": "24",
+   "oe": 3.6678,
+   "repaired": true,
+   "change": {
+    "em": -0.03341,
+    "true_prior": -0.08096
+   },
+   "em_rate_over_true": 1.8655,
+   "bbse": {
+    "name": "RN 2026",
+    "n": 500,
+    "observed_over_expected": 3.6678,
+    "true_rate": 0.12116,
+    "rate_over_true": {
+     "em": 1.8655,
+     "bbse": 1.841,
+     "bbse_soft": 1.5616
+    },
+    "change_from_none": {
+     "em": -0.03341,
+     "bbse": -0.03606,
+     "bbse_soft": -0.05275
+    }
+   }
+  },
+  {
+   "name": "PE 2026",
+   "state": "26",
+   "oe": 2.5211,
+   "repaired": true,
+   "change": {
+    "em": 0.09076,
+    "true_prior": -0.02948
+   },
+   "em_rate_over_true": 3.0863,
+   "bbse": {
+    "name": "PE 2026",
+    "n": 2500,
+    "observed_over_expected": 2.5211,
+    "true_rate": 0.08452,
+    "rate_over_true": {
+     "em": 3.0863,
+     "bbse": 4.9584,
+     "bbse_soft": 2.2311
+    },
+    "change_from_none": {
+     "em": 0.09076,
+     "bbse": 0.25892,
+     "bbse_soft": 0.0287
+    }
+   }
+  },
+  {
+   "name": "BA 2026",
+   "state": "29",
+   "oe": 2.5828,
+   "repaired": true,
+   "change": {
+    "em": 0.06614,
+    "true_prior": -0.02918
+   },
+   "em_rate_over_true": 2.9353,
+   "bbse": {
+    "name": "BA 2026",
+    "n": 2500,
+    "observed_over_expected": 2.5828,
+    "true_rate": 0.07945,
+    "rate_over_true": {
+     "em": 2.9353,
+     "bbse": 6.4604,
+     "bbse_soft": 2.2712
+    },
+    "change_from_none": {
+     "em": 0.06614,
+     "bbse": 0.39636,
+     "bbse_soft": 0.02313
+    }
+   }
+  },
+  {
+   "name": "MG 2026",
+   "state": "31",
+   "oe": 0.9995,
+   "repaired": false,
+   "change": {
+    "em": 0.00213,
+    "true_prior": 0.0
+   },
+   "em_rate_over_true": 1.2882,
+   "bbse": {
+    "name": "MG 2026",
+    "n": 2500,
+    "observed_over_expected": 0.9995,
+    "true_rate": 0.02704,
+    "rate_over_true": {
+     "em": 1.2882,
+     "bbse": 2.4819,
+     "bbse_soft": 1.3374
+    },
+    "change_from_none": {
+     "em": 0.00213,
+     "bbse": 0.02661,
+     "bbse_soft": 0.0029
+    }
+   }
+  },
+  {
+   "name": "ES 2026",
+   "state": "32",
+   "oe": 2.3978,
+   "repaired": true,
+   "change": {
+    "em": 0.45042,
+    "true_prior": -0.01484
+   },
+   "em_rate_over_true": 0.0,
+   "bbse": {
+    "name": "ES 2026",
+    "n": 2500,
+    "observed_over_expected": 2.3978,
+    "true_rate": 0.04896,
+    "rate_over_true": {
+     "em": 0.0,
+     "bbse": 0.0,
+     "bbse_soft": 0.0
+    },
+    "change_from_none": {
+     "em": 0.45042,
+     "bbse": 0.45624,
+     "bbse_soft": 0.45624
+    }
+   }
+  },
+  {
+   "name": "RJ 2026",
+   "state": "33",
+   "oe": 2.1702,
+   "repaired": true,
+   "change": {
+    "em": 0.30442,
+    "true_prior": -0.01745
+   },
+   "em_rate_over_true": 4.9737,
+   "bbse": {
+    "name": "RJ 2026",
+    "n": 1000,
+    "observed_over_expected": 2.1702,
+    "true_rate": 0.08227,
+    "rate_over_true": {
+     "em": 4.9737,
+     "bbse": 8.2062,
+     "bbse_soft": 3.4385
+    },
+    "change_from_none": {
+     "em": 0.30442,
+     "bbse": 0.7951,
+     "bbse_soft": 0.14999
+    }
+   }
+  },
+  {
+   "name": "SP 2026",
+   "state": "35",
+   "oe": 1.0148,
+   "repaired": false,
+   "change": {
+    "em": 0.02967,
+    "true_prior": 2e-05
+   },
+   "em_rate_over_true": 0.4833,
+   "bbse": {
+    "name": "SP 2026",
+    "n": 2500,
+    "observed_over_expected": 1.0148,
+    "true_rate": 0.02685,
+    "rate_over_true": {
+     "em": 0.4833,
+     "bbse": 0.6071,
+     "bbse_soft": 0.5058
+    },
+    "change_from_none": {
+     "em": 0.02967,
+     "bbse": 0.08233,
+     "bbse_soft": 0.03932
+    }
+   }
+  },
+  {
+   "name": "PR 2026",
+   "state": "41",
+   "oe": 2.3259,
+   "repaired": true,
+   "change": {
+    "em": -0.01172,
+    "true_prior": -0.02007
+   },
+   "em_rate_over_true": 1.4153,
+   "bbse": {
+    "name": "PR 2026",
+    "n": 1000,
+    "observed_over_expected": 2.3259,
+    "true_rate": 0.06323,
+    "rate_over_true": {
+     "em": 1.4153,
+     "bbse": 1.7393,
+     "bbse_soft": 1.4491
+    },
+    "change_from_none": {
+     "em": -0.01172,
+     "bbse": 0.01356,
+     "bbse_soft": -0.012
+    }
+   }
+  },
+  {
+   "name": "MT 2026",
+   "state": "51",
+   "oe": 1.8841,
+   "repaired": true,
+   "change": {
+    "em": 0.07555,
+    "true_prior": -0.00969
+   },
+   "em_rate_over_true": 3.3267,
+   "bbse": {
+    "name": "MT 2026",
+    "n": 2500,
+    "observed_over_expected": 1.8841,
+    "true_rate": 0.05766,
+    "rate_over_true": {
+     "em": 3.3267,
+     "bbse": 6.3191,
+     "bbse_soft": 2.4638
+    },
+    "change_from_none": {
+     "em": 0.07555,
+     "bbse": 0.25512,
+     "bbse_soft": 0.03603
+    }
+   }
+  },
+  {
+   "name": "GO 2026",
+   "state": "52",
+   "oe": 1.8128,
+   "repaired": true,
+   "change": {
+    "em": 0.03749,
+    "true_prior": -0.00844
+   },
+   "em_rate_over_true": 2.6423,
+   "bbse": {
+    "name": "GO 2026",
+    "n": 2500,
+    "observed_over_expected": 1.8128,
+    "true_rate": 0.05403,
+    "rate_over_true": {
+     "em": 2.6423,
+     "bbse": 9.8546,
+     "bbse_soft": 2.0404
+    },
+    "change_from_none": {
+     "em": 0.03749,
+     "bbse": 0.48688,
+     "bbse_soft": 0.01682
+    }
+   }
+  }
+ ]
+}

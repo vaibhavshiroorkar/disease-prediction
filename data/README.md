@@ -14,7 +14,7 @@ python -m scripts.download_data
 | `heart_{cleveland,hungarian,switzerland,va}.data` | [UCI Heart Disease](https://archive.ics.uci.edu/dataset/45/heart+disease), the processed files from four hospitals | heart model |
 | `pima_diabetes.csv` | [jbrownlee/Datasets](https://github.com/jbrownlee/Datasets) mirror of the Pima Indians Diabetes data, which UCI no longer hosts | diabetes model |
 | `ilpd_liver.csv` | [UCI Indian Liver Patient Dataset](https://archive.ics.uci.edu/dataset/225/ilpd+indian+liver+patient+dataset) | liver model |
-| `dengue_sinan_{2023,2024,2025}.csv.zip` | Brazil's national notification register (SINAN), published by the Ministry of Health on [OpenDataSUS](https://dadosabertos.saude.gov.br/) | dengue model: 2023 trains it, 2025 checks it. The state study also uses 2024 |
+| `dengue_sinan_{2023,2024,2025,2026}.csv.zip` | Brazil's national notification register (SINAN), published by the Ministry of Health on [OpenDataSUS](https://dadosabertos.saude.gov.br/) | dengue model: 2023 trains it, 2025 checks it. The state study also uses 2024, and its retest the preliminary 2026 file |
 | `malaria_cell_images.zip` | [NIH malaria cell images](https://lhncbc.nlm.nih.gov/LHC-research/LHC-projects/image-processing/malaria-datasheet.html), from the Lister Hill National Center for Biomedical Communications | malaria model |
 
 The full download is about 640 MB, nearly all of it the malaria images and the

@@ -13,15 +13,15 @@ Finished items move to [CHANGELOG.md](CHANGELOG.md).
 
 [Findings](research/findings-states.md).
 
-- Run the frozen 2026 retest ([protocol](research/protocol-2026.md)). Needs
-  `DENGBR26.csv.zip` (15.9 MB, preliminary) downloaded with Vaibhav's OK, its
-  hash recorded in the protocol in its own commit, then
-  `python -m study.states.retest`.
 - Read Esuli et al. 2021 in full. The open copy is a PDF download.
 
 ## Research ideas (suggestions, not started)
 
 
+- Show the 2026 retest on the Lab page, next to the state study.
+- Rerun the retest on the final 2026 file once SINAN closes the year, to see
+  whether late classification moved any verdict. T4 needs more targets inside
+  the O/E band than 2026 gave.
 - Read Yao et al. 2026, Steyerberg 2004 and Janssen 2008 in full before writing.
 - Find why VA's ranking broke: compare each input's effect there with elsewhere.
 - Larger local samples for the refit, with stronger penalties, to find where it

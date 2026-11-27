@@ -1,0 +1,17 @@
+   10s 15 targets
+   72s PA 2026: {'em': 0.05128, 'true_prior': -0.00338}
+  133s TO 2026: {'em': 0.11987, 'true_prior': -0.00149}
+  197s MA 2026: {'em': -0.00251, 'true_prior': -0.02964}
+  252s PI 2026: {'em': 0.01925, 'true_prior': -0.02156}
+  310s CE 2026: {'em': 0.00634, 'true_prior': -0.00106}
+  361s RN 2026: {'em': -0.03341, 'true_prior': -0.08096}
+  412s PE 2026: {'em': 0.09076, 'true_prior': -0.02948}
+  463s BA 2026: {'em': 0.06614, 'true_prior': -0.02918}
+  516s MG 2026: {'em': 0.00213, 'true_prior': 0.0}
+  587s ES 2026: {'em': 0.45042, 'true_prior': -0.01484}
+  658s RJ 2026: {'em': 0.30442, 'true_prior': -0.01745}
+  736s SP 2026: {'em': 0.02967, 'true_prior': 2e-05}
+  792s PR 2026: {'em': -0.01172, 'true_prior': -0.02007}
+  841s MT 2026: {'em': 0.07555, 'true_prior': -0.00969}
+  892s GO 2026: {'em': 0.03749, 'true_prior': -0.00844}
+wrote C:\Users\vaibh\Documents\GitHub\College Projects\disease-prediction\results\retest-2026

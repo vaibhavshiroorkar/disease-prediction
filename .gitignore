@@ -22,3 +22,5 @@ playwright-report/
 .vscode/
 results/states/targets/
 results/states/*.err
+results/retest-2026/targets/
+results/retest-2026/*.err

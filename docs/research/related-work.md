@@ -82,8 +82,9 @@ the point used here.
   most of the error. Our true-rate check found the same on all 47 targets
   (`results/states/true_rate.json`): EM's failure is its rate estimate, not
   the correction. Testing a second label-free estimate (BBSE) on the same
-  draws, and retesting both findings on unseen 2026 data
-  ([protocol-2026.md](protocol-2026.md)), is the part we have not seen done.
+  draws, and retesting both findings on unseen 2026 data under a frozen
+  protocol ([protocol-2026.md](protocol-2026.md), supported in 15 new
+  state-years), is the part we have not seen done.
 
 ## Choices the literature settled
 
